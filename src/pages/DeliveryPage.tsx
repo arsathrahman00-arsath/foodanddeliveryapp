@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, Download, Loader2, Plus, Save, Truck, X } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Download, Loader2, Plus, Save, Truck, X, ScanLine } from "lucide-react";
 import { generateDeliveryPdf } from "@/lib/generateDeliveryPdf";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateForTable } from "@/lib/utils";
 import { deliveryApi } from "@/lib/api";
+import QrScanner from "@/components/QrScanner";
 
 interface DeliveryRecord {
   location: string;
@@ -241,6 +242,21 @@ const DeliveryPage: React.FC = () => {
                     <>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Location (Masjid)</label>
+                        <QrScanner
+                          onScan={(result) => {
+                            const found = masjidList.find(
+                              (m) => m.masjid_name.toLowerCase() === result.toLowerCase()
+                            );
+                            if (found) {
+                              setSelectedMasjid(found.masjid_name);
+                              formInteracted.current = true;
+                              toast({ title: "QR Scanned", description: `Location set to ${found.masjid_name}` });
+                            } else {
+                              toast({ title: "Not Found", description: `"${result}" not found in available locations for this date.`, variant: "destructive" });
+                            }
+                          }}
+                          className="mb-2"
+                        />
                         <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
                           <PopoverTrigger asChild>
                             <Button
