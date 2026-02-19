@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import { CalendarIcon, Camera, Video, Upload, Loader2, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cookingApi, recipeTypeListApi } from "@/lib/api";
+import CameraCapture from "@/components/CameraCapture";
 
 interface RecipeTypeOption {
   recipe_type: string;
@@ -37,8 +38,6 @@ const CookingPage: React.FC = () => {
   const [video, setVideo] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const photoRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchRecipeTypes = async () => {
@@ -56,34 +55,11 @@ const CookingPage: React.FC = () => {
     fetchRecipeTypes();
   }, []);
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "photo" | "video",
-    setter: (f: File | null) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const isPhoto = type === "photo";
-    const prefix = isPhoto ? "image/" : "video/";
-    const maxMB = isPhoto ? 10 : 50;
-    if (!file.type.startsWith(prefix)) {
-      toast({ title: "Invalid file", description: `Please select a ${type} file.`, variant: "destructive" });
-      return;
-    }
-    if (file.size > maxMB * 1024 * 1024) {
-      toast({ title: "File too large", description: `${type === "photo" ? "Image" : "Video"} must be under ${maxMB}MB.`, variant: "destructive" });
-      return;
-    }
-    setter(file);
-  };
-
   const resetForm = () => {
     setCookDate(undefined);
     setRecipeType("");
     setPhoto(null);
     setVideo(null);
-    if (photoRef.current) photoRef.current.value = "";
-    if (videoRef.current) videoRef.current.value = "";
   };
 
   const handleSubmit = async () => {
@@ -96,11 +72,11 @@ const CookingPage: React.FC = () => {
       return;
     }
     if (!photo) {
-      toast({ title: "Missing photo", description: "Please upload a cooking photo.", variant: "destructive" });
+      toast({ title: "Missing photo", description: "Please capture a cooking photo.", variant: "destructive" });
       return;
     }
     if (!video) {
-      toast({ title: "Missing video", description: "Please upload a cooking video.", variant: "destructive" });
+      toast({ title: "Missing video", description: "Please record a cooking video.", variant: "destructive" });
       return;
     }
 
@@ -135,7 +111,6 @@ const CookingPage: React.FC = () => {
           <CardTitle className="text-lg">Log Cooking Activity</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Date Picker */}
           <div className="space-y-2">
             <Label>Cooking Date *</Label>
             <Popover>
@@ -160,7 +135,6 @@ const CookingPage: React.FC = () => {
             </Popover>
           </div>
 
-          {/* Recipe Type */}
           <div className="space-y-2">
             <Label>Recipe Type *</Label>
             <Select value={recipeType} onValueChange={setRecipeType} disabled={isLoadingTypes}>
@@ -177,57 +151,21 @@ const CookingPage: React.FC = () => {
             </Select>
           </div>
 
-          {/* Photo Upload */}
-          <div className="space-y-2">
-            <Label>Cooking Photo *</Label>
-            <div
-              onClick={() => photoRef.current?.click()}
-              className={cn(
-                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-                photo ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30"
-              )}
-            >
-              <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, "photo", setPhoto)} />
-              {photo ? (
-                <div className="flex items-center justify-center gap-2 text-primary">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span className="text-sm font-medium">{photo.name}</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Camera className="w-8 h-8" />
-                  <span className="text-sm">Click to upload photo</span>
-                  <span className="text-xs">JPG, PNG, WebP (max 10MB)</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <CameraCapture
+            mode="photo"
+            label="Cooking Photo *"
+            onCapture={setPhoto}
+            capturedFile={photo}
+            onClear={() => setPhoto(null)}
+          />
 
-          {/* Video Upload */}
-          <div className="space-y-2">
-            <Label>Cooking Video *</Label>
-            <div
-              onClick={() => videoRef.current?.click()}
-              className={cn(
-                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-                video ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30"
-              )}
-            >
-              <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={(e) => handleFileChange(e, "video", setVideo)} />
-              {video ? (
-                <div className="flex items-center justify-center gap-2 text-primary">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span className="text-sm font-medium">{video.name}</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Video className="w-8 h-8" />
-                  <span className="text-sm">Click to upload video</span>
-                  <span className="text-xs">MP4, MOV, WebM (max 50MB)</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <CameraCapture
+            mode="video"
+            label="Cooking Video *"
+            onCapture={setVideo}
+            capturedFile={video}
+            onClear={() => setVideo(null)}
+          />
 
           <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
             {isSubmitting ? (
