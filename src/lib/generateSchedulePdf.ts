@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface ScheduleRow {
   schd_date: string;
@@ -13,7 +14,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export function generateSchedulePdf(data: ScheduleRow[]): void {
+export async function generateSchedulePdf(data: ScheduleRow[]): Promise<PdfSaveResult> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -40,5 +41,5 @@ export function generateSchedulePdf(data: ScheduleRow[]): void {
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`Delivery_Schedule_${todayStr}.pdf`);
+  return savePdfFile(doc, `Delivery_Schedule_${todayStr}.pdf`);
 }

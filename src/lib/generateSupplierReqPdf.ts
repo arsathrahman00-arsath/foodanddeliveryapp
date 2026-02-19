@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface SupplierReqItem {
   item_name: string;
@@ -22,7 +23,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export function generateSupplierReqPdf(params: SupplierReqPdfParams): void {
+export async function generateSupplierReqPdf(params: SupplierReqPdfParams): Promise<PdfSaveResult> {
   const { date, supplierName, items } = params;
 
   const doc = new jsPDF();
@@ -58,7 +59,5 @@ export function generateSupplierReqPdf(params: SupplierReqPdfParams): void {
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(
-    `Supplier_Request_${date}_${supplierName.replace(/\s+/g, "_")}.pdf`
-  );
+  return savePdfFile(doc, `Supplier_Request_${date}_${supplierName.replace(/\s+/g, "_")}.pdf`);
 }

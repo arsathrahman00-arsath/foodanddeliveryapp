@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface DeliveryRow {
   delivery_date: string;
@@ -15,7 +16,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export function generateDeliveryPdf(date: string, rows: DeliveryRow[]): void {
+export async function generateDeliveryPdf(date: string, rows: DeliveryRow[]): Promise<PdfSaveResult> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -45,5 +46,5 @@ export function generateDeliveryPdf(date: string, rows: DeliveryRow[]): void {
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`Food_Delivery_${formatDateDDMMYYYY(date)}.pdf`);
+  return savePdfFile(doc, `Food_Delivery_${formatDateDDMMYYYY(date)}.pdf`);
 }

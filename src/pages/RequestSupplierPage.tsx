@@ -169,18 +169,19 @@ const RequestSupplierPage: React.FC = () => {
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!selectedDate || !selectedRecipe || !selectedCategory || items.length === 0) return;
     setIsDownloading(true);
     try {
-      generateSupplierReqPdf({
+      const result = await generateSupplierReqPdf({
         date: format(selectedDate, "yyyy-MM-dd"),
         recipeType: selectedRecipe.recipe_type,
         supplierName: selectedSupplier,
         categoryName: selectedCategory.cat_name,
         items,
       });
-      toast({ title: "Success", description: "PDF downloaded successfully" });
+      const { handlePdfResult } = await import("@/lib/handlePdfResult");
+      handlePdfResult(result);
     } catch (error) {
       console.error("PDF generation failed:", error);
       toast({ title: "Error", description: "Failed to generate PDF", variant: "destructive" });

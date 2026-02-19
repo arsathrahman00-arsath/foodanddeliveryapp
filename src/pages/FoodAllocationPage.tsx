@@ -392,7 +392,7 @@ const FoodAllocationPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="gap-2 ml-auto"
-                  onClick={() => generateAllocationPdf(records as any, format(filterDate, "yyyy-MM-dd"))}
+                  onClick={async () => { const r = await generateAllocationPdf(records as any, format(filterDate, "yyyy-MM-dd")); const { handlePdfResult } = await import("@/lib/handlePdfResult"); handlePdfResult(r); }}
                   disabled={filteredRecords.length === 0}
                 >
                   <Download className="h-4 w-4" /> Download PDF

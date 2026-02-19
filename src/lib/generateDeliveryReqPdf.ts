@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface RequirementRow {
   masjid_name: string;
@@ -12,7 +13,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export function generateDeliveryReqPdf(date: string, rows: RequirementRow[]): void {
+export async function generateDeliveryReqPdf(date: string, rows: RequirementRow[]): Promise<PdfSaveResult> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -41,5 +42,5 @@ export function generateDeliveryReqPdf(date: string, rows: RequirementRow[]): vo
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`Delivery_Requirement_${date}.pdf`);
+  return savePdfFile(doc, `Delivery_Requirement_${date}.pdf`);
 }

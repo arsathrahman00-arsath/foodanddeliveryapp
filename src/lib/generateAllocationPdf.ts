@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface AllocationRow {
   alloc_date: string;
@@ -16,7 +17,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export function generateAllocationPdf(data: AllocationRow[], filterDate: string): void {
+export async function generateAllocationPdf(data: AllocationRow[], filterDate: string): Promise<PdfSaveResult> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -47,5 +48,5 @@ export function generateAllocationPdf(data: AllocationRow[], filterDate: string)
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`Food_Allocation_${formatDateDDMMYYYY(filterDate)}.pdf`);
+  return savePdfFile(doc, `Food_Allocation_${formatDateDDMMYYYY(filterDate)}.pdf`);
 }
