@@ -2,39 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Food Preparation & Delivery App Design System
-   Warm, appetizing colors with professional feel */
+/* Food Preparation & Delivery App — Mobile-First Design System */
 
 @layer base {
   :root {
-    /* Warm cream background */
     --background: 40 33% 98%;
     --foreground: 20 25% 15%;
 
-    /* Card surfaces */
     --card: 0 0% 100%;
     --card-foreground: 20 25% 15%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 20 25% 15%;
 
-    /* Terracotta primary - warm, appetizing */
     --primary: 16 65% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Sage green secondary */
     --secondary: 142 25% 90%;
     --secondary-foreground: 142 30% 25%;
 
-    /* Muted warm tones */
     --muted: 40 20% 94%;
     --muted-foreground: 20 15% 45%;
 
-    /* Sage accent */
     --accent: 142 35% 85%;
     --accent-foreground: 142 40% 20%;
 
-    /* Status colors */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
@@ -44,12 +36,14 @@
     --warning: 38 92% 50%;
     --warning-foreground: 20 25% 15%;
 
-    /* Borders */
     --border: 30 20% 88%;
     --input: 30 20% 88%;
     --ring: 16 65% 50%;
 
     --radius: 0.75rem;
+
+    /* Bottom nav */
+    --bottom-nav-height: 4rem;
 
     /* Sidebar - deep forest green */
     --sidebar-background: 152 35% 18%;
@@ -61,7 +55,6 @@
     --sidebar-border: 152 25% 25%;
     --sidebar-ring: 16 65% 50%;
 
-    /* Custom gradients */
     --gradient-warm: linear-gradient(135deg, hsl(16 65% 50%) 0%, hsl(28 80% 55%) 100%);
     --gradient-sage: linear-gradient(135deg, hsl(142 35% 45%) 0%, hsl(152 35% 35%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(152 35% 18%) 0%, hsl(142 30% 25%) 100%);
@@ -114,7 +107,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Safe area insets for Capacitor / notch devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -132,11 +136,48 @@
   }
 
   .form-section {
-    @apply bg-card rounded-xl border border-border p-6 shadow-sm;
+    @apply bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm;
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30;
+    @apply bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30;
+  }
+
+  /* Mobile touch target — minimum 44px */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Bottom nav bar */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border;
+    height: var(--bottom-nav-height);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 text-muted-foreground transition-colors duration-150;
+  }
+
+  .bottom-nav-item-active {
+    @apply text-primary;
+  }
+
+  /* Page container with bottom nav offset */
+  .page-container {
+    @apply pb-20 px-4 pt-4 sm:px-6 sm:pt-6;
+  }
+
+  /* Sticky action bar at bottom */
+  .sticky-action-bar {
+    @apply sticky bottom-[var(--bottom-nav-height)] left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border -mx-4 sm:-mx-6;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Mobile header bar */
+  .mobile-header {
+    @apply sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 safe-top;
+    min-height: 56px;
   }
 }
 
@@ -169,35 +210,28 @@
   .animate-slide-in-left {
     animation: slideInLeft 0.3s ease-out;
   }
+
+  .animate-slide-in-bottom {
+    animation: slideInBottom 0.3s ease-out;
+  }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInBottom {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
 }
