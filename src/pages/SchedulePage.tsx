@@ -29,12 +29,14 @@ const SchedulePage: React.FC = () => {
 
   useEffect(() => { loadScheduleData(); }, []);
 
-  const handlePrintPdf = () => {
+  const handlePrintPdf = async () => {
     if (scheduleData.length === 0) {
       toast({ title: "No Data", description: "No schedule data to export", variant: "destructive" });
       return;
     }
-    generateSchedulePdf(scheduleData);
+    const result = await generateSchedulePdf(scheduleData);
+    const { handlePdfResult } = await import("@/lib/handlePdfResult");
+    handlePdfResult(result);
   };
 
   return (

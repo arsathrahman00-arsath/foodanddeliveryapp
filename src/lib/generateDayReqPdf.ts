@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { dayRequirementsApi } from "./api";
+import { savePdfFile, type PdfSaveResult } from "./savePdfFile";
 
 interface RequirementRow {
   day_req_date: string;
@@ -21,7 +22,7 @@ function formatDateDDMMYYYY(dateStr: string): string {
   return dateStr;
 }
 
-export async function generateDayReqPdf(row: RequirementRow): Promise<void> {
+export async function generateDayReqPdf(row: RequirementRow): Promise<PdfSaveResult> {
   const recipeType = row.recipe_type.trim();
 
   const [itemsRes, totpktRes] = await Promise.all([
@@ -104,5 +105,5 @@ export async function generateDayReqPdf(row: RequirementRow): Promise<void> {
     startY = (doc as any).lastAutoTable.finalY + 10;
   });
 
-  doc.save(`Day_Requirements_${rawDate}_${recipeType.replace(/\s+/g, "_")}.pdf`);
+  return savePdfFile(doc, `Day_Requirements_${rawDate}_${recipeType.replace(/\s+/g, "_")}.pdf`);
 }

@@ -360,7 +360,7 @@ const DeliveryPage: React.FC = () => {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => generateDeliveryPdf(format(filterDate, "yyyy-MM-dd"), records)}
+                onClick={async () => { const r = await generateDeliveryPdf(format(filterDate, "yyyy-MM-dd"), records); const { handlePdfResult } = await import("@/lib/handlePdfResult"); handlePdfResult(r); }}
               >
                 <Download className="h-4 w-4" /> Download PDF
               </Button>

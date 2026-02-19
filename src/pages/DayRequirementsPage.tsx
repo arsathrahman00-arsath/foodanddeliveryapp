@@ -26,6 +26,8 @@ import { cn, toProperCase, formatDateForTable } from "@/lib/utils";
 import { dayRequirementsApi, bulkItemApi, bulkRequirementApi } from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfFile } from "@/lib/savePdfFile";
+import { handlePdfResult } from "@/lib/handlePdfResult";
 
 // API for fetching existing retail requirements
 const requirementListApi = {
@@ -210,8 +212,8 @@ const DayRequirementsPage: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
       if (result.status === "success" && result.data) {
-        generatePdfFromData(result.data, req.day_req_date, req.purc_type || "Retail");
-        toast({ title: "Success", description: "PDF downloaded successfully" });
+        const pdfResult = await generatePdfFromData(result.data, req.day_req_date, req.purc_type || "Retail");
+        handlePdfResult(pdfResult);
       } else {
         throw new Error(result.message || "No data returned");
       }
@@ -237,8 +239,8 @@ const DayRequirementsPage: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
       if (result.status === "success" && result.data) {
-        generatePdfFromData(result.data, req.day_req_date, req.purc_type || "Bulk");
-        toast({ title: "Success", description: "PDF downloaded successfully" });
+        const pdfResult = await generatePdfFromData(result.data, req.day_req_date, req.purc_type || "Bulk");
+        handlePdfResult(pdfResult);
       } else {
         throw new Error(result.message || "No data returned");
       }
@@ -250,7 +252,7 @@ const DayRequirementsPage: React.FC = () => {
     }
   };
 
-  const generatePdfFromData = (data: any[], dateStr: string, purcType: string) => {
+  const generatePdfFromData = async (data: any[], dateStr: string, purcType: string) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const rawDate = dateStr?.split("T")[0] || dateStr;
@@ -302,7 +304,7 @@ const DayRequirementsPage: React.FC = () => {
       startY = (doc as any).lastAutoTable.finalY + 10;
     });
 
-    doc.save(`Day_Requirements_${rawDate}_${purcType}.pdf`);
+    return savePdfFile(doc, `Day_Requirements_${rawDate}_${purcType}.pdf`);
   };
 
   // Check if date already has retail requirements

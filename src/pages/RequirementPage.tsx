@@ -39,14 +39,15 @@ const RequirementPage: React.FC = () => {
           return;
         }
 
-        generateDeliveryReqPdf(
+        const result = await generateDeliveryReqPdf(
           formattedDate,
           filtered.map((r: any) => ({
             masjid_name: r.masjid_name,
             req_qty: String(r.req_qty),
           }))
         );
-        toast({ title: "Success", description: "PDF downloaded successfully" });
+        const { handlePdfResult } = await import("@/lib/handlePdfResult");
+        handlePdfResult(result);
       }
     } catch (error) {
       console.error("PDF generation failed:", error);
