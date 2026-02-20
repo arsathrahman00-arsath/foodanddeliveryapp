@@ -31,8 +31,9 @@ const permissionRouteMap: Record<string, string> = {
   // Cooking (standalone)
   "cooking:": "/dashboard/cooking",
   "cooking:cooking": "/dashboard/cooking",
-  // Cleaning
+  // Cleaning (support both "material" and "materials" from API)
   "cleaning:material": "/dashboard/cleaning/material",
+  "cleaning:materials": "/dashboard/cleaning/material",
   "cleaning:vessel": "/dashboard/cleaning/vessel",
   "cleaning:preparation_area": "/dashboard/cleaning/prep",
   "cleaning:packing_area": "/dashboard/cleaning/pack",
@@ -56,7 +57,7 @@ export function buildAllowedRoutes(permissions: UserPermission[]): Set<string> {
 
   for (const p of permissions) {
     const moduleKey = String(p.module_id).toLowerCase();
-    const subKey = String(p.sub_mod_id || "").toLowerCase();
+    const subKey = String(p.sub_mod_id || "").trim().toLowerCase();
     const compositeKey = `${moduleKey}:${subKey}`;
 
     const route = permissionRouteMap[compositeKey];
