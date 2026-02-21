@@ -38,6 +38,7 @@ interface IngredientRow {
   item_name: string;
   item_code: number | string;
   cat_name: string;
+  cat_code: number | string;
   unit_short: string;
   req_qty: number;
   item_rate: number;
@@ -195,7 +196,7 @@ const RecipeCostPage: React.FC = () => {
           recipe_type: selectedType.recipe_type,
           recipe_code: String(selectedType.recipe_code),
           cat_name: item.cat_name || "",
-          cat_code: "",
+          cat_code: String(item.cat_code || ""),
           item_name: item.item_name,
           item_code: String(item.item_code),
           unit_short: item.unit_short,
