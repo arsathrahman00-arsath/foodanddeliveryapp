@@ -502,4 +502,20 @@ export const recipeCostApi = {
     total_rate: string;
     created_by: string;
   }) => postFormData("/recipe_cost/", data),
+  update: (data: {
+    day_rcp_date: string;
+    recipe_type: string;
+    recipe_code: string;
+    cat_name: string;
+    cat_code: string;
+    item_name: string;
+    item_code: string;
+    unit_short: string;
+    req_qty: string;
+    item_rate: string;
+    total_rate: string;
+    created_by: string;
+  }) => postFormData("/update_recipe_cost/", data),
+  delete: (data: { day_rcp_date: string; recipe_type: string }) =>
+    postFormData("/delete_recipe_cost/", data),
 };
