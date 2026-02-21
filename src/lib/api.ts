@@ -483,3 +483,23 @@ export const materialReceiptApi = {
     created_by: string;
   }) => postFormData("/save_materialreceipt/", data),
 };
+
+// Recipe Cost API endpoints
+export const recipeCostApi = {
+  getAll: () => getData("/get_recipe_cost/"),
+  getIngredients: () => getData("/get_recipedateforcost/"),
+  create: (data: {
+    day_rcp_date: string;
+    recipe_type: string;
+    recipe_code: string;
+    cat_name: string;
+    cat_code: string;
+    item_name: string;
+    item_code: string;
+    unit_short: string;
+    req_qty: string;
+    item_rate: string;
+    total_rate: string;
+    created_by: string;
+  }) => postFormData("/recipe_cost/", data),
+};

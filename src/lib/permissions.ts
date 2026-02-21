@@ -25,6 +25,7 @@ const permissionRouteMap: Record<string, string> = {
   "preparation:day_requirements": "/dashboard/day-requirements",
   "preparation:material_receipt": "/dashboard/material-receipt",
   "preparation:request_for_supplier": "/dashboard/request-supplier",
+  "preparation:recipe_cost": "/dashboard/recipe-cost",
   // Packing (standalone)
   "packing:": "/dashboard/packing",
   "packing:packing": "/dashboard/packing",
