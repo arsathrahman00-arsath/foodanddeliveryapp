@@ -518,4 +518,6 @@ export const recipeCostApi = {
   }) => postFormData("/update_recipe_cost/", data),
   delete: (data: { day_rcp_date: string; recipe_type: string }) =>
     postFormData("/delete_recipe_cost/", data),
+  getByDate: (data: { day_rcp_date: string }) =>
+    postFormData("/get_recipe_cost_by_date/", data),
 };
