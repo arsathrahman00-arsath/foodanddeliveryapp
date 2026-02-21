@@ -308,8 +308,9 @@ const RecipeCostPage: React.FC = () => {
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
-          // Only allow closing via X button or programmatic close
-          if (!open) return;
+          if (!open) {
+            resetDialog();
+          }
           setDialogOpen(open);
         }}
       >
