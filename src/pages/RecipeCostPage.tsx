@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, DollarSign, Edit, Loader2, Plus, Save, Search, Trash2 } from "lucide-react";
+import RecipeCostByDate from "@/components/RecipeCostByDate";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -406,6 +407,9 @@ const RecipeCostPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Recipe Cost By Date Section */}
+      <RecipeCostByDate />
 
       {/* Add/Edit Recipe Cost Dialog */}
       <Dialog
