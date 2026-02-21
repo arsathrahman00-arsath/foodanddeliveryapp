@@ -53,6 +53,7 @@ const menuSections: MenuSection[] = [
       { to: "/dashboard/day-requirements", icon: <ListChecks className="w-5 h-5" />, label: "Purchase Request" },
       { to: "/dashboard/material-receipt", icon: <Package className="w-5 h-5" />, label: "Material Receipt" },
       { to: "/dashboard/request-supplier", icon: <ClipboardList className="w-5 h-5" />, label: "Supplier Request" },
+      { to: "/dashboard/recipe-cost", icon: <CalendarDays className="w-5 h-5" />, label: "Daily Recipe Cost" },
     ],
   },
   {
