@@ -12,6 +12,28 @@ export interface UserSession {
   role_selection: string;
 }
 
+// Helper to extract a user-friendly error message
+export const getApiErrorMessage = (error: unknown): string => {
+  if (error instanceof TypeError && error.message === "Failed to fetch") {
+    return "Unable to connect to server. Please check your internet connection.";
+  }
+  if (error instanceof Error) {
+    // HTTP status-based messages
+    if (error.message.includes("status: 400")) return "Invalid request. Please check the data and try again.";
+    if (error.message.includes("status: 401")) return "Session expired. Please log in again.";
+    if (error.message.includes("status: 403")) return "You do not have permission to perform this action.";
+    if (error.message.includes("status: 404")) return "The requested resource was not found.";
+    if (error.message.includes("status: 409")) return "This record already exists or conflicts with existing data.";
+    if (error.message.includes("status: 422")) return "Invalid data submitted. Please review and correct the fields.";
+    if (error.message.includes("status: 429")) return "Too many requests. Please wait a moment and try again.";
+    if (error.message.includes("status: 500")) return "Server error. Please try again later.";
+    if (error.message.includes("status: 502")) return "Server is temporarily unavailable. Please try again later.";
+    if (error.message.includes("status: 503")) return "Service is under maintenance. Please try again later.";
+    return error.message;
+  }
+  return "An unexpected error occurred. Please try again.";
+};
+
 // Helper to create form data from object
 const createFormData = (data: Record<string, string>): FormData => {
   const formData = new FormData();
@@ -30,6 +52,17 @@ const postFormData = async (endpoint: string, data: Record<string, string>): Pro
     });
     
     if (!response.ok) {
+      // Try to extract error message from response body
+      try {
+        const errorBody = await response.json();
+        if (errorBody?.message) {
+          throw new Error(errorBody.message);
+        }
+      } catch (parseErr) {
+        if (parseErr instanceof Error && !parseErr.message.includes("status:")) {
+          throw parseErr;
+        }
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -48,6 +81,16 @@ const getData = async (endpoint: string): Promise<any> => {
     });
     
     if (!response.ok) {
+      try {
+        const errorBody = await response.json();
+        if (errorBody?.message) {
+          throw new Error(errorBody.message);
+        }
+      } catch (parseErr) {
+        if (parseErr instanceof Error && !parseErr.message.includes("status:")) {
+          throw parseErr;
+        }
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     

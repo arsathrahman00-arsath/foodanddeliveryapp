@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { recipeTypeApi } from "@/lib/api";
+import { recipeTypeApi, getApiErrorMessage } from "@/lib/api";
 import { alphabetOnly, numericOnly, toProperCase } from "@/lib/utils";
 
 const schema = z.object({
@@ -68,8 +68,8 @@ const RecipeTypeFormFields: React.FC<Props> = ({ onSuccess }) => {
       } else {
         setError(response.message || "Failed to create");
       }
-    } catch {
-      setError("Unable to connect to server");
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

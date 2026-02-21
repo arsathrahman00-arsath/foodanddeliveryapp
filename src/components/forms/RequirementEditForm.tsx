@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { numericOnly } from "@/lib/utils";
-import { deliveryRequirementApi, masjidListApi } from "@/lib/api";
+import { deliveryRequirementApi, masjidListApi, getApiErrorMessage } from "@/lib/api";
 
 interface Props {
   onSuccess?: () => void;
@@ -46,7 +46,7 @@ const RequirementEditForm: React.FC<Props> = ({ onSuccess, editData }) => {
       });
       if (response.status === "success" || response.status === "ok") { onSuccess?.(); }
       else { setError(response.message || "Failed to update"); }
-    } catch { setError("Unable to connect to server"); }
+    } catch (err) { setError(getApiErrorMessage(err)); }
     finally { setIsLoading(false); }
   };
 

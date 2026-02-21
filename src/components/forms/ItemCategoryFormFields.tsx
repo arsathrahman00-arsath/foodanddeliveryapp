@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { itemCategoryApi } from "@/lib/api";
+import { itemCategoryApi, getApiErrorMessage } from "@/lib/api";
 import { alphabetOnly, toProperCase } from "@/lib/utils";
 
 const schema = z.object({
@@ -64,8 +64,8 @@ const ItemCategoryFormFields: React.FC<Props> = ({ onSuccess }) => {
       } else {
         setError(response.message || "Failed to create");
       }
-    } catch {
-      setError("Unable to connect to server");
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

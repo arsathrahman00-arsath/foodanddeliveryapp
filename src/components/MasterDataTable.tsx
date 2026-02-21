@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Plus, RefreshCw, AlertCircle, MoreHorizontal, Pencil, Trash2, Search } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/api";
 import { toProperCase, formatDateForTable } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +131,7 @@ const MasterDataTable: React.FC<MasterDataTableProps> = ({
         setError(response.message || "Failed to load data");
       }
     } catch (err) {
-      setError("Unable to connect to server. Please try again.");
+      setError(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -210,8 +211,8 @@ const MasterDataTable: React.FC<MasterDataTableProps> = ({
       } else {
         toast({ title: "Error", description: response.message || "Failed to delete", variant: "destructive" });
       }
-    } catch {
-      toast({ title: "Error", description: "Unable to connect to server", variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" });
     } finally {
       setIsDeleting(false);
       setDeleteRow(null);

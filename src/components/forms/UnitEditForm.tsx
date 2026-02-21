@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { alphabetOnly, toProperCase } from "@/lib/utils";
-import { unitApi } from "@/lib/api";
+import { unitApi, getApiErrorMessage } from "@/lib/api";
 
 interface Props {
   onSuccess?: () => void;
@@ -31,7 +31,7 @@ const UnitEditForm: React.FC<Props> = ({ onSuccess, editData }) => {
       });
       if (response.status === "success" || response.status === "ok") { onSuccess?.(); }
       else { setError(response.message || "Failed to update"); }
-    } catch { setError("Unable to connect to server"); }
+    } catch (err) { setError(getApiErrorMessage(err)); }
     finally { setIsLoading(false); }
   };
 
