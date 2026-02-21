@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { recipeApi, recipeTypeApi, itemSendApi, itemDetailsApi } from "@/lib/api";
+import { recipeApi, recipeTypeApi, itemSendApi, itemDetailsApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { numericOnly } from "@/lib/utils";
 
@@ -369,7 +369,7 @@ const RecipeFormFields: React.FC<Props> = ({ onSuccess }) => {
       onSuccess?.();
     } catch (err: any) {
       console.error("Recipe submission error:", err);
-      setError(err.message || "Unable to connect to server");
+      setError(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

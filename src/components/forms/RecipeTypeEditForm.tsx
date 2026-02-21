@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { alphabetOnly, numericOnly, toProperCase } from "@/lib/utils";
-import { recipeTypeApi } from "@/lib/api";
+import { recipeTypeApi, getApiErrorMessage } from "@/lib/api";
 
 interface Props {
   onSuccess?: () => void;
@@ -33,7 +33,7 @@ const RecipeTypeEditForm: React.FC<Props> = ({ onSuccess, editData }) => {
       });
       if (response.status === "success" || response.status === "ok") { onSuccess?.(); }
       else { setError(response.message || "Failed to update"); }
-    } catch { setError("Unable to connect to server"); }
+    } catch (err) { setError(getApiErrorMessage(err)); }
     finally { setIsLoading(false); }
   };
 

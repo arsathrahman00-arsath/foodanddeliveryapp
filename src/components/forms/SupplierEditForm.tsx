@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { alphabetOnly, numericOnly, toProperCase } from "@/lib/utils";
-import { supplierApi, itemCategoryApi } from "@/lib/api";
+import { supplierApi, itemCategoryApi, getApiErrorMessage } from "@/lib/api";
 
 interface Props {
   onSuccess?: () => void;
@@ -62,7 +62,7 @@ const SupplierEditForm: React.FC<Props> = ({ onSuccess, editData }) => {
       });
       if (response.status === "success" || response.status === "ok") { onSuccess?.(); }
       else { setError(response.message || "Failed to update"); }
-    } catch { setError("Unable to connect to server"); }
+    } catch (err) { setError(getApiErrorMessage(err)); }
     finally { setIsLoading(false); }
   };
 

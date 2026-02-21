@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { itemApi, categoryUnitApi } from "@/lib/api";
+import { itemApi, categoryUnitApi, getApiErrorMessage } from "@/lib/api";
 import { alphabetOnly, toProperCase, numericOnly } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -131,8 +131,8 @@ const ItemFormFields: React.FC<Props> = ({ onSuccess }) => {
       } else {
         toast({ title: "Error", description: "Some items failed to create", variant: "destructive" });
       }
-    } catch {
-      toast({ title: "Error", description: "Unable to connect to server", variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

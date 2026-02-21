@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { deliveryScheduleApi, recipeTypeListApi } from "@/lib/api";
+import { deliveryScheduleApi, recipeTypeListApi, getApiErrorMessage } from "@/lib/api";
 
 interface Props {
   onSuccess?: () => void;
@@ -46,7 +46,7 @@ const ScheduleEditForm: React.FC<Props> = ({ onSuccess, editData }) => {
       });
       if (response.status === "success" || response.status === "ok") { onSuccess?.(); }
       else { setError(response.message || "Failed to update"); }
-    } catch { setError("Unable to connect to server"); }
+    } catch (err) { setError(getApiErrorMessage(err)); }
     finally { setIsLoading(false); }
   };
 

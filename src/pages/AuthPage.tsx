@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "@/lib/api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -81,9 +82,10 @@ const AuthPage: React.FC = () => {
         });
       }
     } catch (error) {
+      const msg = getApiErrorMessage(error);
       toast({
-        title: "Error",
-        description: "Unable to connect to server. Please try again.",
+        title: "Login Failed",
+        description: error instanceof Error && error.message.includes("status: 401") ? "Invalid username or password" : msg,
         variant: "destructive",
       });
     } finally {
@@ -122,8 +124,8 @@ const AuthPage: React.FC = () => {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Unable to connect to server. Please try again.",
+        title: "Registration Failed",
+        description: getApiErrorMessage(error),
         variant: "destructive",
       });
     } finally {

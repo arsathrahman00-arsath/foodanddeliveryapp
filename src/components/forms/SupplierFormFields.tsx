@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { supplierApi, itemCategoryApi } from "@/lib/api";
+import { supplierApi, itemCategoryApi, getApiErrorMessage } from "@/lib/api";
 import { alphabetOnly, toProperCase } from "@/lib/utils";
 
 const schema = z.object({
@@ -87,8 +87,8 @@ const SupplierFormFields: React.FC<Props> = ({ onSuccess }) => {
       } else {
         setError(response.message || "Failed to create");
       }
-    } catch {
-      setError("Unable to connect to server");
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
