@@ -26,6 +26,8 @@ const permissionRouteMap: Record<string, string> = {
   "preparation:material_receipt": "/dashboard/material-receipt",
   "preparation:request_for_supplier": "/dashboard/request-supplier",
   "preparation:recipe_cost": "/dashboard/recipe-cost",
+  // API returns module_id "Master" (capital M) with sub_mod_id "Daily_Recipe_Cost"
+  "master:daily_recipe_cost": "/dashboard/recipe-cost",
   // Packing (standalone)
   "packing:": "/dashboard/packing",
   "packing:packing": "/dashboard/packing",
