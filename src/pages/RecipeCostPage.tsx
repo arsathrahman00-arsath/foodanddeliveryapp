@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, DollarSign, Loader2, Plus, Save, Search } from "lucide-react";
+import { CalendarIcon, DollarSign, Edit, Loader2, Plus, Save, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateForTable, numericOnly } from "@/lib/utils";
 import { recipeCostApi, recipeTypeListApi, getApiErrorMessage } from "@/lib/api";
@@ -55,6 +65,8 @@ const RecipeCostPage: React.FC = () => {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editRecord, setEditRecord] = useState<RecipeCostRecord | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [recipeTypes, setRecipeTypes] = useState<RecipeTypeOption[]>([]);
   const [selectedRecipeCode, setSelectedRecipeCode] = useState("");
@@ -62,6 +74,10 @@ const RecipeCostPage: React.FC = () => {
   const [isLoadingRecipeTypes, setIsLoadingRecipeTypes] = useState(false);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Delete state
+  const [deleteRecord, setDeleteRecord] = useState<RecipeCostRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch existing records
   const fetchRecords = async () => {
@@ -157,9 +173,44 @@ const RecipeCostPage: React.FC = () => {
     setSelectedDate(undefined);
     setSelectedRecipeCode("");
     setIngredients([]);
+    setIsEditMode(false);
+    setEditRecord(null);
   };
 
-  // Submit
+  // Open Add dialog
+  const handleOpenAdd = () => {
+    resetDialog();
+    setDialogOpen(true);
+  };
+
+  // Open Edit dialog
+  const handleOpenEdit = (record: RecipeCostRecord) => {
+    setIsEditMode(true);
+    setEditRecord(record);
+    // Parse the date
+    const dateParts = record.day_rcp_date.split("-");
+    if (dateParts.length === 3) {
+      setSelectedDate(new Date(record.day_rcp_date));
+    } else {
+      setSelectedDate(new Date(record.day_rcp_date));
+    }
+    setDialogOpen(true);
+    // recipe code will be set after recipeTypes load
+  };
+
+  // Set recipe code once recipeTypes are loaded in edit mode
+  useEffect(() => {
+    if (isEditMode && editRecord && recipeTypes.length > 0 && !selectedRecipeCode) {
+      const match = recipeTypes.find(
+        (rt) => rt.recipe_type === editRecord.recipe_type
+      );
+      if (match) {
+        setSelectedRecipeCode(String(match.recipe_code));
+      }
+    }
+  }, [isEditMode, editRecord, recipeTypes]);
+
+  // Submit (create or update)
   const handleSubmit = async () => {
     if (!selectedDate || !selectedRecipeCode || ingredients.length === 0) {
       toast({
@@ -191,7 +242,7 @@ const RecipeCostPage: React.FC = () => {
 
       for (const item of ingredients) {
         const totalRate = (item.req_qty * item.item_rate).toFixed(2);
-        await recipeCostApi.create({
+        const payload = {
           day_rcp_date: formattedDate,
           recipe_type: selectedType.recipe_type,
           recipe_code: String(selectedType.recipe_code),
@@ -204,10 +255,21 @@ const RecipeCostPage: React.FC = () => {
           item_rate: String(item.item_rate),
           total_rate: totalRate,
           created_by: user?.user_name || "",
-        });
+        };
+
+        if (isEditMode) {
+          await recipeCostApi.update(payload);
+        } else {
+          await recipeCostApi.create(payload);
+        }
       }
 
-      toast({ title: "Success", description: "Recipe cost saved successfully" });
+      toast({
+        title: "Success",
+        description: isEditMode
+          ? "Recipe cost updated successfully"
+          : "Recipe cost saved successfully",
+      });
       resetDialog();
       setDialogOpen(false);
       fetchRecords();
@@ -216,6 +278,26 @@ const RecipeCostPage: React.FC = () => {
       toast({ title: "Error", description: getApiErrorMessage(error), variant: "destructive" });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Delete
+  const handleDelete = async () => {
+    if (!deleteRecord) return;
+    setIsDeleting(true);
+    try {
+      await recipeCostApi.delete({
+        day_rcp_date: deleteRecord.day_rcp_date,
+        recipe_type: deleteRecord.recipe_type,
+      });
+      toast({ title: "Success", description: "Recipe cost deleted successfully" });
+      setDeleteRecord(null);
+      fetchRecords();
+    } catch (error) {
+      console.error("Failed to delete recipe cost:", error);
+      toast({ title: "Error", description: getApiErrorMessage(error), variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -244,7 +326,7 @@ const RecipeCostPage: React.FC = () => {
             Track ingredient costs for recipe types on a daily basis
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
+        <Button onClick={handleOpenAdd} className="gap-2">
           <Plus className="w-4 h-4" />
           Add Recipe Cost
         </Button>
@@ -283,6 +365,7 @@ const RecipeCostPage: React.FC = () => {
                     <TableHead>Recipe Type</TableHead>
                     <TableHead className="text-right">Total Rate</TableHead>
                     <TableHead>Created By</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -295,6 +378,26 @@ const RecipeCostPage: React.FC = () => {
                         ₹{Number(record.total_rate).toFixed(2)}
                       </TableCell>
                       <TableCell>{record.created_by}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenEdit(record)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteRecord(record)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -304,7 +407,7 @@ const RecipeCostPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Add Recipe Cost Dialog */}
+      {/* Add/Edit Recipe Cost Dialog */}
       <Dialog
         open={dialogOpen}
         onOpenChange={(open) => {
@@ -322,7 +425,7 @@ const RecipeCostPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-primary" />
-              Add Daily Recipe Cost
+              {isEditMode ? "Edit Daily Recipe Cost" : "Add Daily Recipe Cost"}
             </DialogTitle>
           </DialogHeader>
 
@@ -336,6 +439,7 @@ const RecipeCostPage: React.FC = () => {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      disabled={isEditMode}
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !selectedDate && "text-muted-foreground"
@@ -345,15 +449,17 @@ const RecipeCostPage: React.FC = () => {
                       {selectedDate ? format(selectedDate, "dd-MM-yyyy") : "Select date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
+                  {!isEditMode && (
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  )}
                 </Popover>
               </div>
 
@@ -363,7 +469,7 @@ const RecipeCostPage: React.FC = () => {
                 <Select
                   value={selectedRecipeCode}
                   onValueChange={setSelectedRecipeCode}
-                  disabled={isLoadingRecipeTypes}
+                  disabled={isLoadingRecipeTypes || isEditMode}
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -495,12 +601,38 @@ const RecipeCostPage: React.FC = () => {
                 ) : (
                   <Save className="w-4 h-4" />
                 )}
-                Save Recipe Cost
+                {isEditMode ? "Update Recipe Cost" : "Save Recipe Cost"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteRecord} onOpenChange={(open) => !open && setDeleteRecord(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Recipe Cost</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the recipe cost for{" "}
+              <span className="font-semibold">{deleteRecord?.recipe_type}</span> on{" "}
+              <span className="font-semibold">{deleteRecord ? formatDateForTable(deleteRecord.day_rcp_date) : ""}</span>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
