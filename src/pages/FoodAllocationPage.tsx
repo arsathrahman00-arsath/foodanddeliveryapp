@@ -317,55 +317,91 @@ const FoodAllocationPage: React.FC = () => {
                     </div>
                   )}
 
-                  {!isLoadingDateData && selectedDate && autoPopulated && rows.length > 0 && (
+                  {!isLoadingDateData && selectedDate && autoPopulated && (
                     <>
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead>Recipe Type</TableHead>
-                              <TableHead>Location</TableHead>
-                              <TableHead className="text-right">Req Qty</TableHead>
-                              <TableHead className="text-right">Allocate Qty</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {rows.map((row) => (
-                              <TableRow key={row.id}>
-                                <TableCell>
-                                  <span className="text-sm font-medium">{toProperCase(row.recipe_type || (recipes.length === 1 ? recipes[0].recipe_type : ""))}</span>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm font-medium">{toProperCase(row.masjid_name)}</span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <span className="text-sm font-medium">{row.req_qty}</span>
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="number"
-                                    placeholder="Qty"
-                                    value={row.alloc_qty}
-                                    onChange={(e) => updateRow(row.id, "alloc_qty", e.target.value)}
-                                    onKeyDown={numericOnly}
-                                    className="h-9 text-right"
-                                  />
-                                </TableCell>
+                      {rows.length > 0 && (
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/50">
+                                <TableHead>Recipe Type</TableHead>
+                                <TableHead>Location</TableHead>
+                                <TableHead className="text-right">Req Qty</TableHead>
+                                <TableHead className="text-right">Allocate Qty</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                            </TableHeader>
+                            <TableBody>
+                              {rows.map((row) => (
+                                <TableRow key={row.id}>
+                                  <TableCell>
+                                    <Input
+                                      placeholder="Recipe type"
+                                      value={row.recipe_type}
+                                      onChange={(e) => updateRow(row.id, "recipe_type", e.target.value)}
+                                      className="h-9"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      placeholder="Location"
+                                      value={row.masjid_name}
+                                      onChange={(e) => updateRow(row.id, "masjid_name", e.target.value)}
+                                      className="h-9"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      placeholder="Req Qty"
+                                      value={row.req_qty || ""}
+                                      onChange={(e) => updateRow(row.id, "req_qty", e.target.value)}
+                                      onKeyDown={numericOnly}
+                                      className="h-9 text-right"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      placeholder="Alloc Qty"
+                                      value={row.alloc_qty}
+                                      onChange={(e) => updateRow(row.id, "alloc_qty", e.target.value)}
+                                      onKeyDown={numericOnly}
+                                      className="h-9 text-right"
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
 
-                      <Button onClick={handleSubmit} disabled={isSubmitting || hasAllocExceedsAvail} className="w-full gap-2">
-                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Save Allocation{rows.filter(r => r.alloc_qty).length > 1 ? "s" : ""}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => {
+                          formInteracted.current = true;
+                          setRows(prev => [...prev, {
+                            id: crypto.randomUUID(),
+                            recipe_type: recipes.length === 1 ? recipes[0].recipe_type : "",
+                            recipe_code: recipes.length === 1 ? recipes[0].recipe_code : "",
+                            masjid_name: "",
+                            req_qty: 0,
+                            alloc_qty: "",
+                          }]);
+                        }}
+                      >
+                        <Plus className="h-4 w-4" /> Add New Entry
                       </Button>
-                    </>
-                  )}
 
-                  {!isLoadingDateData && selectedDate && autoPopulated && rows.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">All locations already have allocations for this date.</p>
+                      {rows.length > 0 && (
+                        <Button onClick={handleSubmit} disabled={isSubmitting || hasAllocExceedsAvail} className="w-full gap-2">
+                          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          Save Allocation{rows.filter(r => r.alloc_qty).length > 1 ? "s" : ""}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </DialogContent>
