@@ -108,11 +108,18 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
             req_qty: rec.req_qty ? String(rec.req_qty) : "",
           })));
         } else {
-          // No plan data for this date — populate all mosques with empty qty
-          form.setValue("entries", masjidList.map(m => ({
-            masjid_name: m.masjid_name,
-            req_qty: "",
-          })));
+          // No plan data for this date — populate all mosques with most recent qty
+          form.setValue("entries", masjidList.map(m => {
+            // Find most recent record for this mosque
+            const mosqueRecords = deliveryPlanData
+              .filter(d => d.masjid_name?.toLowerCase() === m.masjid_name?.toLowerCase())
+              .sort((a, b) => (b.req_date || "").localeCompare(a.req_date || ""));
+            const latestQty = mosqueRecords.length > 0 ? mosqueRecords[0].req_qty : 0;
+            return {
+              masjid_name: m.masjid_name,
+              req_qty: latestQty ? String(latestQty) : "",
+            };
+          }));
         }
       }
     }
