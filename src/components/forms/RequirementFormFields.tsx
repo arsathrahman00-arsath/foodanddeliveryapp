@@ -91,27 +91,32 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
   const watchDateTo = form.watch("req_date_to");
   const watchEntries = form.watch("entries");
 
-  // Auto-populate all mosques with delivery plan qty when dates are selected
+  // Auto-populate mosques with delivery plan qty when dates are selected
   useEffect(() => {
-    if (watchDateFrom && watchDateTo && masjidList.length > 0) {
+    if (watchDateFrom && deliveryPlanData.length > 0) {
       const currentEntries = form.getValues("entries");
       const isDefault = currentEntries.length === 1 && !currentEntries[0].masjid_name && !currentEntries[0].req_qty;
       if (isDefault) {
         const formattedFrom = format(watchDateFrom, "yyyy-MM-dd");
-        form.setValue("entries", masjidList.map(m => {
-          // Find matching delivery plan record for this mosque and date
-          const planRecord = deliveryPlanData.find(
-            d => d.masjid_name?.toLowerCase() === m.masjid_name?.toLowerCase() &&
-                 d.req_date?.split("T")[0] === formattedFrom
-          );
-          return {
+        // Filter delivery plan records matching the selected date
+        const matchingRecords = deliveryPlanData.filter(
+          d => d.req_date?.split("T")[0] === formattedFrom
+        );
+        if (matchingRecords.length > 0) {
+          form.setValue("entries", matchingRecords.map(rec => ({
+            masjid_name: rec.masjid_name,
+            req_qty: rec.req_qty ? String(rec.req_qty) : "",
+          })));
+        } else {
+          // No plan data for this date — populate all mosques with empty qty
+          form.setValue("entries", masjidList.map(m => ({
             masjid_name: m.masjid_name,
-            req_qty: planRecord ? String(planRecord.req_qty) : "",
-          };
-        }));
+            req_qty: "",
+          })));
+        }
       }
     }
-  }, [watchDateFrom, watchDateTo, masjidList, deliveryPlanData, form]);
+  }, [watchDateFrom, masjidList, deliveryPlanData, form]);
 
   const dateRange = watchDateFrom && watchDateTo && watchDateTo >= watchDateFrom
     ? eachDayOfInterval({ start: watchDateFrom, end: watchDateTo })
