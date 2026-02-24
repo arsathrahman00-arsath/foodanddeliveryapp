@@ -492,7 +492,7 @@ export const materialReceiptApi = {
 // Recipe Cost API endpoints
 export const recipeCostApi = {
   getAll: () => getData("/get_recipe_cost/"),
-  
+  getIngredients: () => getData("/get_recipedateforcost/"),
   create: (data: {
     day_rcp_date: string;
     recipe_type: string;

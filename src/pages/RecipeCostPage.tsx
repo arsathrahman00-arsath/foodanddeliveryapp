@@ -63,6 +63,7 @@ const RecipeCostPage: React.FC = () => {
   const [records, setRecords] = useState<RecipeCostRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -122,7 +123,7 @@ const RecipeCostPage: React.FC = () => {
 
   // Fetch ingredients when recipe type and date are selected
   useEffect(() => {
-    if (!dialogOpen || !selectedRecipeCode || !selectedDate) {
+    if (!dialogOpen || !selectedRecipeCode) {
       setIngredients([]);
       return;
     }
@@ -134,8 +135,13 @@ const RecipeCostPage: React.FC = () => {
     const fetchIngredients = async () => {
       setIsLoadingIngredients(true);
       try {
-        const formattedDate = format(selectedDate, "yyyy-MM-dd");
-        const response = await recipeCostApi.getByDate({ day_rcp_date: formattedDate });
+        let response;
+        if (isEditMode && selectedDate) {
+          const formattedDate = format(selectedDate, "yyyy-MM-dd");
+          response = await recipeCostApi.getByDate({ day_rcp_date: formattedDate });
+        } else {
+          response = await recipeCostApi.getIngredients();
+        }
         if (response.status === "success" && Array.isArray(response.data)) {
           const filtered = response.data
             .filter((item: any) => item.recipe_type === selectedType.recipe_type)
@@ -154,7 +160,7 @@ const RecipeCostPage: React.FC = () => {
       }
     };
     fetchIngredients();
-  }, [selectedRecipeCode, selectedDate, dialogOpen]);
+  }, [selectedRecipeCode, selectedDate, dialogOpen, isEditMode]);
 
   // Update ingredient field
   const updateIngredient = (index: number, field: "req_qty" | "item_rate", value: string) => {
@@ -304,9 +310,9 @@ const RecipeCostPage: React.FC = () => {
   };
 
   // Filtered records
-  const filteredRecords = searchQuery.trim()
+  const filteredRecords = appliedSearchQuery.trim()
     ? records.filter((r) => {
-        const q = searchQuery.toLowerCase();
+        const q = appliedSearchQuery.toLowerCase();
         return (
           formatDateForTable(r.day_rcp_date).toLowerCase().includes(q) ||
           (r.recipe_type && r.recipe_type.toLowerCase().includes(q)) ||
@@ -345,6 +351,9 @@ const RecipeCostPage: React.FC = () => {
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setAppliedSearchQuery(searchQuery);
+                }}
                 className="pl-9"
               />
             </div>
