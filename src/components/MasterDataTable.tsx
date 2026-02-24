@@ -99,17 +99,18 @@ const MasterDataTable: React.FC<MasterDataTableProps> = ({
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
 
   const filteredData = useMemo(() => {
-    if (!searchQuery.trim()) return data;
-    const q = searchQuery.toLowerCase();
+    if (!appliedSearchQuery.trim()) return data;
+    const q = appliedSearchQuery.toLowerCase();
     return data.filter((row) =>
       columns.some((col) => {
         const val = row[col.key];
         return val && String(val).toLowerCase().includes(q);
       })
     );
-  }, [data, searchQuery, columns]);
+  }, [data, appliedSearchQuery, columns]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -263,6 +264,9 @@ const MasterDataTable: React.FC<MasterDataTableProps> = ({
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setAppliedSearchQuery(searchQuery);
+                }}
                 className="flex h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
             </div>
