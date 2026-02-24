@@ -120,9 +120,9 @@ const RecipeCostPage: React.FC = () => {
     fetchRecipeTypes();
   }, [dialogOpen]);
 
-  // Fetch ingredients when recipe type is selected
+  // Fetch ingredients when recipe type and date are selected
   useEffect(() => {
-    if (!dialogOpen || !selectedRecipeCode) {
+    if (!dialogOpen || !selectedRecipeCode || !selectedDate) {
       setIngredients([]);
       return;
     }
@@ -134,7 +134,8 @@ const RecipeCostPage: React.FC = () => {
     const fetchIngredients = async () => {
       setIsLoadingIngredients(true);
       try {
-        const response = await recipeCostApi.getIngredients();
+        const formattedDate = format(selectedDate, "yyyy-MM-dd");
+        const response = await recipeCostApi.getByDate({ day_rcp_date: formattedDate });
         if (response.status === "success" && Array.isArray(response.data)) {
           const filtered = response.data
             .filter((item: any) => item.recipe_type === selectedType.recipe_type)
@@ -153,7 +154,7 @@ const RecipeCostPage: React.FC = () => {
       }
     };
     fetchIngredients();
-  }, [selectedRecipeCode, dialogOpen]);
+  }, [selectedRecipeCode, selectedDate, dialogOpen]);
 
   // Update ingredient field
   const updateIngredient = (index: number, field: "req_qty" | "item_rate", value: string) => {
