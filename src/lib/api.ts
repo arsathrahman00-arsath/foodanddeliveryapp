@@ -287,6 +287,11 @@ export const masjidListApi = {
   getAll: () => getData("/get_masjid_list/"),
 };
 
+// Delivery Plan Requirement lookup (for auto-populating req_qty)
+export const deliveryPlanReqApi = {
+  getAll: () => getData("/get_Deliveryplanrequirement/"),
+};
+
 // Recipe type with codes endpoint (for Schedule form)
 export const recipeTypeListApi = {
   getAll: () => getData("/get_master_recipttype/"),
