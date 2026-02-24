@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { deliveryRequirementApi, masjidListApi } from "@/lib/api";
+import { deliveryRequirementApi, masjidListApi, deliveryPlanReqApi } from "@/lib/api";
 import { cn, numericOnly } from "@/lib/utils";
 
 const entrySchema = z.object({
@@ -73,6 +73,7 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
   const [masjidList, setMasjidList] = useState<MasjidOption[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [existingRecords, setExistingRecords] = useState<{ req_date: string; masjid_name: string }[]>([]);
+  const [deliveryPlanData, setDeliveryPlanData] = useState<{ req_date: string; masjid_name: string; req_qty: number }[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -90,17 +91,27 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
   const watchDateTo = form.watch("req_date_to");
   const watchEntries = form.watch("entries");
 
-  // Auto-populate all mosques when dates are selected
+  // Auto-populate all mosques with delivery plan qty when dates are selected
   useEffect(() => {
     if (watchDateFrom && watchDateTo && masjidList.length > 0) {
       const currentEntries = form.getValues("entries");
-      // Only auto-populate if there's just the default empty entry
       const isDefault = currentEntries.length === 1 && !currentEntries[0].masjid_name && !currentEntries[0].req_qty;
       if (isDefault) {
-        form.setValue("entries", masjidList.map(m => ({ masjid_name: m.masjid_name, req_qty: "" })));
+        const formattedFrom = format(watchDateFrom, "yyyy-MM-dd");
+        form.setValue("entries", masjidList.map(m => {
+          // Find matching delivery plan record for this mosque and date
+          const planRecord = deliveryPlanData.find(
+            d => d.masjid_name?.toLowerCase() === m.masjid_name?.toLowerCase() &&
+                 d.req_date?.split("T")[0] === formattedFrom
+          );
+          return {
+            masjid_name: m.masjid_name,
+            req_qty: planRecord ? String(planRecord.req_qty) : "",
+          };
+        }));
       }
     }
-  }, [watchDateFrom, watchDateTo, masjidList, form]);
+  }, [watchDateFrom, watchDateTo, masjidList, deliveryPlanData, form]);
 
   const dateRange = watchDateFrom && watchDateTo && watchDateTo >= watchDateFrom
     ? eachDayOfInterval({ start: watchDateFrom, end: watchDateTo })
@@ -118,9 +129,10 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [masjidResponse, reqResponse] = await Promise.all([
+        const [masjidResponse, reqResponse, planResponse] = await Promise.all([
           masjidListApi.getAll(),
           deliveryRequirementApi.getAll(),
+          deliveryPlanReqApi.getAll(),
         ]);
         if (masjidResponse.status === "success" && masjidResponse.data) {
           setMasjidList(masjidResponse.data.map((item: any) => ({
@@ -132,6 +144,13 @@ const RequirementFormFields: React.FC<RequirementFormFieldsProps> = ({
           setExistingRecords(reqResponse.data.map((item: any) => ({
             req_date: item.req_date,
             masjid_name: item.masjid_name?.toLowerCase(),
+          })));
+        }
+        if ((planResponse.status === "success" || planResponse.status === "ok") && Array.isArray(planResponse.data)) {
+          setDeliveryPlanData(planResponse.data.map((item: any) => ({
+            req_date: item.req_date,
+            masjid_name: item.masjid_name,
+            req_qty: Number(item.req_qty) || 0,
           })));
         }
       } catch (error) {

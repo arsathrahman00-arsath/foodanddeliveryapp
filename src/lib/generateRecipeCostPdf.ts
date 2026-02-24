@@ -43,11 +43,11 @@ export async function generateRecipeCostPdf(
     row.item_name,
     row.unit_short,
     Number(row.req_qty).toFixed(2),
-    `₹${Number(row.item_rate).toFixed(2)}`,
-    `₹${Number(row.total_rate).toFixed(2)}`,
+    `Rs.${Number(row.item_rate).toFixed(2)}`,
+    `Rs.${Number(row.total_rate).toFixed(2)}`,
   ]);
 
-  tableData.push(["", "", "", "", "", "Grand Total", `₹${grandTotal.toFixed(2)}`]);
+  tableData.push(["", "", "", "", "", "Grand Total", `Rs.${grandTotal.toFixed(2)}`]);
 
   autoTable(doc, {
     startY: 34,
