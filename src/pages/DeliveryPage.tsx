@@ -168,6 +168,7 @@ const DeliveryPage: React.FC = () => {
         delivery_date: formattedDate,
         delivery_qty: deliveryQty,
         delivery_by: deliveryBy,
+        delivery_time: deliveryTime,
       });
 
       toast({ title: "Success", description: "Delivery recorded successfully" });
