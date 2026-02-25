@@ -366,6 +366,7 @@ export const deliveryApi = {
     delivery_date: string;
     delivery_qty: string;
     delivery_by: string;
+    delivery_time: string;
   }) => postFormData("/delivery_post/", data),
 };
 
