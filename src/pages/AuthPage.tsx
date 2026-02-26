@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChefHat, Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import ForgotPasswordDialog from "@/components/ForgotPasswordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,6 +201,11 @@ const AuthPage: React.FC = () => {
                     {loginForm.formState.errors.user_pwd && (
                       <p className="text-sm text-destructive">{loginForm.formState.errors.user_pwd.message}</p>
                     )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div />
+                    <ForgotPasswordDialog />
                   </div>
 
                   <Button type="submit" className="w-full h-11 bg-gradient-warm hover:opacity-90" disabled={isLoading}>

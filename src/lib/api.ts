@@ -112,6 +112,12 @@ export const authApi = {
 
   login: (data: { user_name: string; user_pwd: string }) =>
     postFormData("/user_login/", data),
+
+  verifyUser: (data: { user_name: string }) =>
+    postFormData("/verify_user/", data),
+
+  updatePassword: (data: { user_code: string; new_password: string }) =>
+    postFormData("/update_password/", data),
 };
 
 // Master Location endpoints
