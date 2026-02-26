@@ -59,7 +59,7 @@ const DeliveryPage: React.FC = () => {
   const [selectedMasjid, setSelectedMasjid] = useState<string>("");
   const [allocatedQty, setAllocatedQty] = useState<number>(0);
   const [deliveryTime, setDeliveryTime] = useState<string>("");
-  const [deliveryBy, setDeliveryBy] = useState<string>("");
+  const [deliveryBy, setDeliveryBy] = useState<string>(user?.user_name || "");
   const [deliveryQty, setDeliveryQty] = useState<string>("");
 
   const fetchRecords = async () => {
@@ -134,7 +134,7 @@ const DeliveryPage: React.FC = () => {
     setSelectedMasjid("");
     setAllocatedQty(0);
     setDeliveryTime("");
-    setDeliveryBy("");
+    setDeliveryBy(user?.user_name || "");
     setDeliveryQty("");
     formInteracted.current = false;
   };
@@ -316,7 +316,7 @@ const DeliveryPage: React.FC = () => {
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Delivery By</label>
-                        <Input placeholder="Enter personnel name" value={deliveryBy} onChange={(e) => { setDeliveryBy(e.target.value); formInteracted.current = true; }} />
+                        <Input placeholder="Enter personnel name" value={deliveryBy} readOnly className="bg-muted" />
                       </div>
 
                       <div className="space-y-2">
