@@ -33,11 +33,10 @@ export async function generateAllocationPdf(data: AllocationRow[], filterDate: s
 
   autoTable(doc, {
     startY: 36,
-    head: [["#", "Location", "Recipe Type", "Req Qty", "Alloc Qty"]],
+    head: [["#", "Location", "Req Qty", "Alloc Qty"]],
     body: filtered.map((row, i) => [
       String(i + 1),
       row.masjid_name,
-      row.recipe_type,
       String(row.req_qty),
       String(row.alloc_qty),
     ]),
