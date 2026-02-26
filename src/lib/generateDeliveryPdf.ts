@@ -7,6 +7,7 @@ interface DeliveryRow {
   location: string;
   delivery_qty: string;
   delivery_by: string;
+  delivery_time?: string;
 }
 
 function formatDateDDMMYYYY(dateStr: string): string {
@@ -32,12 +33,12 @@ export async function generateDeliveryPdf(date: string, rows: DeliveryRow[]): Pr
 
   autoTable(doc, {
     startY: 36,
-    head: [["#", "Date", "Location", "Delivery Qty", "Delivery By"]],
+    head: [["#", "Location", "Delivery Qty", "Delivery Time", "Delivery By"]],
     body: filtered.map((row, i) => [
       String(i + 1),
-      formatDateDDMMYYYY(row.delivery_date),
       row.location,
       row.delivery_qty,
+      row.delivery_time || "",
       row.delivery_by,
     ]),
     theme: "grid",
