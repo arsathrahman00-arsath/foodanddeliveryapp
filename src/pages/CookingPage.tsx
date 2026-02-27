@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { format } from "date-fns";
 import { CalendarIcon, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,52 +12,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { cookingApi, recipeTypeListApi } from "@/lib/api";
+import { cookingApi } from "@/lib/api";
 import CameraCapture from "@/components/CameraCapture";
 
-interface RecipeTypeOption {
-  recipe_type: string;
-  recipe_code: number;
-}
 
 const CookingPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [cookDate, setCookDate] = useState<Date>();
-  const [recipeType, setRecipeType] = useState("");
-  const [recipeTypes, setRecipeTypes] = useState<RecipeTypeOption[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-
-  useEffect(() => {
-    const fetchRecipeTypes = async () => {
-      try {
-        const response = await recipeTypeListApi.getAll();
-        if (response.status === "success" && response.data) {
-          setRecipeTypes(response.data);
-        }
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to load recipe types.", variant: "destructive" });
-      } finally {
-        setIsLoadingTypes(false);
-      }
-    };
-    fetchRecipeTypes();
-  }, []);
+  
 
   const resetForm = () => {
     setCookDate(undefined);
-    setRecipeType("");
     setPhoto(null);
     setVideo(null);
   };
@@ -65,10 +35,6 @@ const CookingPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!cookDate) {
       toast({ title: "Missing date", description: "Please select a cooking date.", variant: "destructive" });
-      return;
-    }
-    if (!recipeType) {
-      toast({ title: "Missing recipe type", description: "Please select a recipe type.", variant: "destructive" });
       return;
     }
     if (!photo) {
@@ -85,7 +51,6 @@ const CookingPage: React.FC = () => {
       const formData = new FormData();
       formData.append("cook_date", format(cookDate, "yyyy-MM-dd"));
       formData.append("created_by", user?.user_name || "");
-      formData.append("recipe_type", recipeType);
       formData.append("cook_photo", photo);
       formData.append("cook_video", video);
 
@@ -133,22 +98,6 @@ const CookingPage: React.FC = () => {
                 />
               </PopoverContent>
             </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Recipe Type *</Label>
-            <Select value={recipeType} onValueChange={setRecipeType} disabled={isLoadingTypes}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={isLoadingTypes ? "Loading..." : "Select recipe type"} />
-              </SelectTrigger>
-              <SelectContent>
-                {recipeTypes.map((rt) => (
-                  <SelectItem key={rt.recipe_code} value={rt.recipe_type}>
-                    {rt.recipe_type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <CameraCapture

@@ -31,20 +31,30 @@ export async function generateDeliveryPdf(date: string, rows: DeliveryRow[]): Pr
 
   const filtered = rows.filter(r => r.delivery_date.split("T")[0] === date);
 
+  const totalDeliveryQty = filtered.reduce((sum, r) => sum + (Number(r.delivery_qty) || 0), 0);
+
   autoTable(doc, {
     startY: 36,
     head: [["#", "Location", "Delivery Qty", "Delivery Time", "Delivery By"]],
-    body: filtered.map((row, i) => [
-      String(i + 1),
-      row.location,
-      row.delivery_qty,
-      row.delivery_time || "",
-      row.delivery_by,
-    ]),
+    body: [
+      ...filtered.map((row, i) => [
+        String(i + 1),
+        row.location,
+        row.delivery_qty,
+        row.delivery_time || "",
+        row.delivery_by,
+      ]),
+      ["", "Total", String(totalDeliveryQty), "", ""],
+    ],
     theme: "grid",
     headStyles: { fillColor: [59, 130, 246], fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     margin: { left: 14, right: 14 },
+    didParseCell: (data: any) => {
+      if (data.row.index === filtered.length && data.section === "body") {
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
   });
 
   return savePdfFile(doc, `Food_Delivery_${formatDateDDMMYYYY(date)}.pdf`);

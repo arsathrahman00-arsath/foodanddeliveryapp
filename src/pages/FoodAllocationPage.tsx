@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Download, Loader2, Plus, Save, Utensils } from "lucide-react";
+import { CalendarIcon, Download, Loader2, Plus, Save, Utensils, MoreVertical, Trash2 } from "lucide-react";
 import { generateAllocationPdf } from "@/lib/generateAllocationPdf";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn, numericOnly, toProperCase, formatDateForTable } from "@/lib/utils";
 import { allocationApi } from "@/lib/api";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AllocationRecord {
   alloc_date: string;
@@ -61,6 +67,8 @@ const FoodAllocationPage: React.FC = () => {
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showCloseWarning, setShowCloseWarning] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ alloc_date: string; masjid_name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const formInteracted = useRef(false);
   const [filterDate, setFilterDate] = useState<Date | undefined>();
 
@@ -95,7 +103,28 @@ const FoodAllocationPage: React.FC = () => {
     ? records.filter(r => r.alloc_date.split("T")[0] === format(filterDate, "yyyy-MM-dd"))
     : records;
 
-
+  const handleDeleteAllocation = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const result = await allocationApi.delete({
+        alloc_date: deleteTarget.alloc_date.split("T")[0],
+        masjid_name: deleteTarget.masjid_name,
+      });
+      if (result.status === "success") {
+        toast({ title: "Deleted", description: "Allocation deleted successfully" });
+        fetchRecords();
+      } else {
+        toast({ title: "Error", description: result.message || "Failed to delete", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast({ title: "Error", description: "Failed to delete allocation", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
 
   const resetDialog = () => {
@@ -447,13 +476,14 @@ const FoodAllocationPage: React.FC = () => {
                   <TableHead className="text-right">Available Qty</TableHead>
                   <TableHead className="text-right">Alloc Qty</TableHead>
                   <TableHead>Created By</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoadingRecords ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                 ) : filteredRecords.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{filterDate ? "No records for selected date" : "No allocation records found"}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{filterDate ? "No records for selected date" : "No allocation records found"}</TableCell></TableRow>
                 ) : (
                   filteredRecords.map((record, index) => (
                     <TableRow key={index}>
@@ -464,6 +494,24 @@ const FoodAllocationPage: React.FC = () => {
                       <TableCell className="text-right">{record.avbl_qty}</TableCell>
                       <TableCell className="text-right">{record.alloc_qty}</TableCell>
                       <TableCell>{record.created_by}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteTarget({ alloc_date: record.alloc_date, masjid_name: record.masjid_name })}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -472,6 +520,25 @@ const FoodAllocationPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Allocation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the allocation for "{deleteTarget?.masjid_name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAllocation} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showCloseWarning} onOpenChange={setShowCloseWarning}>
         <AlertDialogContent>
