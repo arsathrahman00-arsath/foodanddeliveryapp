@@ -361,6 +361,8 @@ export const allocationApi = {
   }) => postFormData("/allocation_post/", data),
   updateAvailableQty: (data: { alloc_date: string; avbl_qty: string }) =>
     postFormData("/updateavbl_qty/", data),
+  delete: (data: { alloc_date: string; masjid_name: string }) =>
+    postFormData("/deleteallocation/", data),
 };
 
 // Delivery API endpoints

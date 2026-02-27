@@ -5,7 +5,7 @@ import {
   LogOut, LayoutDashboard, User, ChevronDown, Database, Calendar, CalendarDays,
   ClipboardList, ChefHat as PrepIcon, ListChecks, PackageCheck, Utensils, Send,
   SprayCan, Flame, Droplets, Container, Sandwich, Archive, Eye, Settings,
-  ShieldCheck, Settings2,
+  ShieldCheck, Settings2, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,12 @@ const CollapsibleMenu: React.FC<CollapsibleMenuProps> = ({ label, icon, items, i
 const filterItems = (items: MenuItem[], allowedRoutes: Set<string>): MenuItem[] =>
   items.filter((item) => allowedRoutes.has(item.to));
 
-const DashboardSidebar: React.FC = () => {
+interface DashboardSidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ collapsed, onToggle }) => {
   const { user, logout, allowedRoutes } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,79 +161,150 @@ const DashboardSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col shadow-xl z-50">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-warm flex items-center justify-center shadow-lg">
-            <ChefHat className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg text-sidebar-foreground">FPDA</h1>
-            <p className="text-xs text-sidebar-foreground/60">Master Data</p>
-          </div>
+    <aside className={cn(
+      "fixed left-0 top-0 h-screen bg-sidebar flex flex-col shadow-xl z-50 transition-all duration-300",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      {/* Logo + Toggle */}
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-between">
+          {!collapsed && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-warm flex items-center justify-center shadow-lg">
+                <ChefHat className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="font-bold text-lg text-sidebar-foreground">FPDA</h1>
+                <p className="text-xs text-sidebar-foreground/60">Master Data</p>
+              </div>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            onClick={onToggle}
+          >
+            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          </Button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <NavItem to="/dashboard" icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" />
-
-        {visibleMaster.length > 0 && (
-          <CollapsibleMenu label="Master" icon={<Database className="w-5 h-5" />} items={visibleMaster} isActive={isMasterActive} defaultOpen={isMasterActive} />
-        )}
-        {visibleDeliveryPlan.length > 0 && (
-          <CollapsibleMenu label="Delivery Plan" icon={<Calendar className="w-5 h-5" />} items={visibleDeliveryPlan} isActive={isDeliveryPlanActive} defaultOpen={isDeliveryPlanActive} />
-        )}
-        {visiblePreparation.length > 0 && (
-          <CollapsibleMenu label="Preparation" icon={<PrepIcon className="w-5 h-5" />} items={visiblePreparation} isActive={isPreparationActive} defaultOpen={isPreparationActive} />
-        )}
-
-        {allowedRoutes.has("/dashboard/packing") && (
-          <NavItem to="/dashboard/packing" icon={<PackageCheck className="w-5 h-5" />} label="Packing" />
-        )}
-        {allowedRoutes.has("/dashboard/cooking") && (
-          <NavItem to="/dashboard/cooking" icon={<Flame className="w-5 h-5" />} label="Cooking" />
-        )}
-
-        {visibleCleaning.length > 0 && (
-          <CollapsibleMenu label="Cleaning" icon={<SprayCan className="w-5 h-5" />} items={visibleCleaning} isActive={isCleaningActive} defaultOpen={isCleaningActive} />
-        )}
-        {visibleDistribution.length > 0 && (
-          <CollapsibleMenu label="Distribution" icon={<Utensils className="w-5 h-5" />} items={visibleDistribution} isActive={isDistributionActive} defaultOpen={isDistributionActive} />
-        )}
-
-        {allowedRoutes.has("/dashboard/view-media") && (
-          <NavItem to="/dashboard/view-media" icon={<Eye className="w-5 h-5" />} label="View Media" />
-        )}
-
-        {visibleSettings.length > 0 && (
-          <CollapsibleMenu label="Settings" icon={<Settings className="w-5 h-5" />} items={visibleSettings} isActive={isSettingsActive} defaultOpen={isSettingsActive} />
+      <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "p-2" : "p-4")}>
+        {collapsed ? (
+          <>
+            <NavLink to="/dashboard" className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title="Dashboard">
+              <LayoutDashboard className="w-5 h-5" />
+            </NavLink>
+            {visibleMaster.length > 0 && visibleMaster.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+            {visibleDeliveryPlan.length > 0 && visibleDeliveryPlan.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+            {visiblePreparation.length > 0 && visiblePreparation.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+            {allowedRoutes.has("/dashboard/packing") && (
+              <NavLink to="/dashboard/packing" className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title="Packing">
+                <PackageCheck className="w-5 h-5" />
+              </NavLink>
+            )}
+            {allowedRoutes.has("/dashboard/cooking") && (
+              <NavLink to="/dashboard/cooking" className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title="Cooking">
+                <Flame className="w-5 h-5" />
+              </NavLink>
+            )}
+            {visibleCleaning.length > 0 && visibleCleaning.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+            {visibleDistribution.length > 0 && visibleDistribution.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+            {allowedRoutes.has("/dashboard/view-media") && (
+              <NavLink to="/dashboard/view-media" className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title="View Media">
+                <Eye className="w-5 h-5" />
+              </NavLink>
+            )}
+            {visibleSettings.length > 0 && visibleSettings.map(item => (
+              <NavLink key={item.to} to={item.to} className={({ isActive }) => cn("sidebar-item justify-center p-2", isActive && "sidebar-item-active")} title={item.label}>
+                {item.icon}
+              </NavLink>
+            ))}
+          </>
+        ) : (
+          <>
+            <NavItem to="/dashboard" icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" />
+            {visibleMaster.length > 0 && (
+              <CollapsibleMenu label="Master" icon={<Database className="w-5 h-5" />} items={visibleMaster} isActive={isMasterActive} defaultOpen={isMasterActive} />
+            )}
+            {visibleDeliveryPlan.length > 0 && (
+              <CollapsibleMenu label="Delivery Plan" icon={<Calendar className="w-5 h-5" />} items={visibleDeliveryPlan} isActive={isDeliveryPlanActive} defaultOpen={isDeliveryPlanActive} />
+            )}
+            {visiblePreparation.length > 0 && (
+              <CollapsibleMenu label="Preparation" icon={<PrepIcon className="w-5 h-5" />} items={visiblePreparation} isActive={isPreparationActive} defaultOpen={isPreparationActive} />
+            )}
+            {allowedRoutes.has("/dashboard/packing") && (
+              <NavItem to="/dashboard/packing" icon={<PackageCheck className="w-5 h-5" />} label="Packing" />
+            )}
+            {allowedRoutes.has("/dashboard/cooking") && (
+              <NavItem to="/dashboard/cooking" icon={<Flame className="w-5 h-5" />} label="Cooking" />
+            )}
+            {visibleCleaning.length > 0 && (
+              <CollapsibleMenu label="Cleaning" icon={<SprayCan className="w-5 h-5" />} items={visibleCleaning} isActive={isCleaningActive} defaultOpen={isCleaningActive} />
+            )}
+            {visibleDistribution.length > 0 && (
+              <CollapsibleMenu label="Distribution" icon={<Utensils className="w-5 h-5" />} items={visibleDistribution} isActive={isDistributionActive} defaultOpen={isDistributionActive} />
+            )}
+            {allowedRoutes.has("/dashboard/view-media") && (
+              <NavItem to="/dashboard/view-media" icon={<Eye className="w-5 h-5" />} label="View Media" />
+            )}
+            {visibleSettings.length > 0 && (
+              <CollapsibleMenu label="Settings" icon={<Settings className="w-5 h-5" />} items={visibleSettings} isActive={isSettingsActive} defaultOpen={isSettingsActive} />
+            )}
+          </>
         )}
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-4 px-2">
-          <div className="w-9 h-9 rounded-lg bg-sidebar-accent flex items-center justify-center">
-            <User className="w-4 h-4 text-sidebar-accent-foreground" />
+      <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-4")}>
+        {!collapsed && (
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-9 h-9 rounded-lg bg-sidebar-accent flex items-center justify-center">
+              <User className="w-4 h-4 text-sidebar-accent-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.user_name || "User"}
+              </p>
+              <p className="text-xs text-sidebar-foreground/60 capitalize">
+                {user?.role_selection || "Guest"}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {user?.user_name || "User"}
-            </p>
-            <p className="text-xs text-sidebar-foreground/60 capitalize">
-              {user?.role_selection || "Guest"}
-            </p>
-          </div>
-        </div>
+        )}
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          className={cn(
+            "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+            collapsed ? "justify-center p-2" : "justify-start gap-3"
+          )}
           onClick={handleLogout}
+          title="Sign Out"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          {!collapsed && "Sign Out"}
         </Button>
       </div>
     </aside>

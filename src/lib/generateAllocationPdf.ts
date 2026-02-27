@@ -31,19 +31,30 @@ export async function generateAllocationPdf(data: AllocationRow[], filterDate: s
 
   const filtered = data.filter(r => r.alloc_date.split("T")[0] === filterDate);
 
+  const totalReqQty = filtered.reduce((sum, r) => sum + (Number(r.req_qty) || 0), 0);
+  const totalAllocQty = filtered.reduce((sum, r) => sum + (Number(r.alloc_qty) || 0), 0);
+
   autoTable(doc, {
     startY: 36,
     head: [["#", "Location", "Req Qty", "Alloc Qty"]],
-    body: filtered.map((row, i) => [
-      String(i + 1),
-      row.masjid_name,
-      String(row.req_qty),
-      String(row.alloc_qty),
-    ]),
+    body: [
+      ...filtered.map((row, i) => [
+        String(i + 1),
+        row.masjid_name,
+        String(row.req_qty),
+        String(row.alloc_qty),
+      ]),
+      ["", "Total", String(totalReqQty), String(totalAllocQty)],
+    ],
     theme: "grid",
     headStyles: { fillColor: [59, 130, 246], fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     margin: { left: 14, right: 14 },
+    didParseCell: (data: any) => {
+      if (data.row.index === filtered.length && data.section === "body") {
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
   });
 
   return savePdfFile(doc, `Food_Allocation_${formatDateDDMMYYYY(filterDate)}.pdf`);

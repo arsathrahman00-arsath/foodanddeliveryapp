@@ -28,18 +28,28 @@ export async function generateDeliveryReqPdf(date: string, rows: RequirementRow[
   doc.text(`Date: ${formatDateDDMMYYYY(date)}`, pageWidth - 14, 28, { align: "right" });
 
   // Table
+  const totalReqQty = rows.reduce((sum, r) => sum + (Number(r.req_qty) || 0), 0);
+
   autoTable(doc, {
     startY: 36,
     head: [["#", "Mosque Name", "Required Qty"]],
-    body: rows.map((row, i) => [
-      String(i + 1),
-      row.masjid_name,
-      row.req_qty,
-    ]),
+    body: [
+      ...rows.map((row, i) => [
+        String(i + 1),
+        row.masjid_name,
+        row.req_qty,
+      ]),
+      ["", "Total", String(totalReqQty)],
+    ],
     theme: "grid",
     headStyles: { fillColor: [59, 130, 246], fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     margin: { left: 14, right: 14 },
+    didParseCell: (data: any) => {
+      if (data.row.index === rows.length && data.section === "body") {
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
   });
 
   return savePdfFile(doc, `Delivery_Requirement_${date}.pdf`);

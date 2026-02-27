@@ -9,13 +9,14 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 const DashboardLayout: React.FC = () => {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Desktop: keep existing sidebar layout
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-background">
-        <DashboardSidebar />
-        <main className="ml-64 min-h-screen">
+        <DashboardSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(prev => !prev)} />
+        <main className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
           <div className="p-8">
             <Outlet />
           </div>
