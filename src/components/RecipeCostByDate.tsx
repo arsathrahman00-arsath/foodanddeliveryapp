@@ -224,7 +224,7 @@ const RecipeCostByDate: React.FC = () => {
                           min="0"
                         />
                       ) : (
-                        row.req_qty
+                        Number(row.req_qty).toFixed(2)
                       )}
                     </TableCell>
                     <TableCell className="text-right">
