@@ -19,7 +19,7 @@ import SchedulePage from "@/pages/SchedulePage";
 import RequirementPage from "@/pages/RequirementPage";
 import DayRequirementsPage from "@/pages/DayRequirementsPage";
 import MaterialReceiptPage from "@/pages/MaterialReceiptPage";
-import NewMaterialReceiptPage from "@/pages/NewMaterialReceiptPage";
+// NewMaterialReceiptPage is now a dialog in MaterialReceiptPage
 import RequestSupplierPage from "@/pages/RequestSupplierPage";
 import PackingPage from "@/pages/PackingPage";
 import CookingPage from "@/pages/CookingPage";
@@ -63,7 +63,7 @@ const App = () => (
                 <Route path="/dashboard/requirement" element={<RequirementPage />} />
                 <Route path="/dashboard/day-requirements" element={<DayRequirementsPage />} />
                 <Route path="/dashboard/material-receipt" element={<MaterialReceiptPage />} />
-                <Route path="/dashboard/material-receipt/new" element={<NewMaterialReceiptPage />} />
+                {/* Material receipt form is now a dialog on the listing page */}
                 <Route path="/dashboard/request-supplier" element={<RequestSupplierPage />} />
                 <Route path="/dashboard/recipe-cost" element={<RecipeCostPage />} />
                 <Route path="/dashboard/packing" element={<PackingPage />} />
