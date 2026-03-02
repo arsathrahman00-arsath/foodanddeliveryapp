@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatDateForTable, numericOnly } from "@/lib/utils";
-import { recipeCostApi, recipeTypeListApi, getApiErrorMessage } from "@/lib/api";
+import { recipeCostApi, recipeTypeListApi, dayRequirementsApi, getApiErrorMessage } from "@/lib/api";
 
 interface RecipeCostRecord {
   day_rcp_date: string;
@@ -101,25 +101,66 @@ const RecipeCostPage: React.FC = () => {
     fetchRecords();
   }, []);
 
-  // Fetch recipe types when dialog opens
+  // Fetch recipe types: date-based for Add mode, generic for Edit mode
   useEffect(() => {
     if (!dialogOpen) return;
-    const fetchRecipeTypes = async () => {
+
+    if (isEditMode) {
+      // Edit mode: use generic list
+      const fetchRecipeTypes = async () => {
+        setIsLoadingRecipeTypes(true);
+        try {
+          const response = await recipeTypeListApi.getAll();
+          if (response.status === "success" && Array.isArray(response.data)) {
+            setRecipeTypes(response.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch recipe types:", error);
+          toast({ title: "Error", description: getApiErrorMessage(error), variant: "destructive" });
+        } finally {
+          setIsLoadingRecipeTypes(false);
+        }
+      };
+      fetchRecipeTypes();
+    }
+  }, [dialogOpen, isEditMode]);
+
+  // Add mode: fetch recipe types by date
+  useEffect(() => {
+    if (!dialogOpen || isEditMode || !selectedDate) {
+      if (!isEditMode) {
+        setRecipeTypes([]);
+        setSelectedRecipeCode("");
+      }
+      return;
+    }
+    const fetchByDate = async () => {
       setIsLoadingRecipeTypes(true);
       try {
-        const response = await recipeTypeListApi.getAll();
-        if (response.status === "success" && Array.isArray(response.data)) {
-          setRecipeTypes(response.data);
+        const formattedDate = format(selectedDate, "yyyy-MM-dd");
+        const response = await dayRequirementsApi.getByDate(formattedDate);
+        if (response.status === "success" && response.data) {
+          const recipes = response.data.recipes || [];
+          const mapped = recipes.map((r: any) => ({
+            recipe_type: r.recipe_type,
+            recipe_code: r.recipe_code,
+            recipe_perkg: 0,
+            recipe_totpkt: 0,
+          }));
+          setRecipeTypes(mapped);
+          if (mapped.length > 0) {
+            setSelectedRecipeCode(String(mapped[0].recipe_code));
+          }
         }
       } catch (error) {
-        console.error("Failed to fetch recipe types:", error);
+        console.error("Failed to fetch recipe types by date:", error);
         toast({ title: "Error", description: getApiErrorMessage(error), variant: "destructive" });
       } finally {
         setIsLoadingRecipeTypes(false);
       }
     };
-    fetchRecipeTypes();
-  }, [dialogOpen]);
+    fetchByDate();
+  }, [dialogOpen, isEditMode, selectedDate]);
 
   // Fetch ingredients when recipe type and date are selected
   useEffect(() => {

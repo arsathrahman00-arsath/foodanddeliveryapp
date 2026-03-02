@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn, toProperCase } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import { dayRequirementsApi, itemCategoryApi, supplierRequisitionApi } from "@/lib/api";
 import { generateSupplierReqPdf } from "@/lib/generateSupplierReqPdf";
 
@@ -23,6 +24,7 @@ interface SupplierItem {
   cat_name: string;
   unit_short: string;
   day_req_qty: string | number;
+  request_qty: string;
 }
 
 interface CategoryData {
@@ -140,6 +142,10 @@ const RequestSupplierPage: React.FC = () => {
 
   const canFetch = selectedDate && selectedRecipeCode && selectedSupplier && selectedCatCode;
 
+  const updateRequestQty = (index: number, value: string) => {
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, request_qty: value } : item));
+  };
+
   const handleFetchItems = async () => {
     if (!selectedDate || !selectedRecipeCode || !selectedCatCode) return;
 
@@ -153,7 +159,11 @@ const RequestSupplierPage: React.FC = () => {
       });
 
       if (response.status === "success" && response.data) {
-        setItems(Array.isArray(response.data) ? response.data : []);
+        const raw = Array.isArray(response.data) ? response.data : [];
+        setItems(raw.map((item: any) => ({
+          ...item,
+          request_qty: String(Number(item.day_req_qty) || 0),
+        })));
       } else {
         setItems([]);
         toast({
@@ -304,27 +314,36 @@ const RequestSupplierPage: React.FC = () => {
             <div className="rounded-lg border overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-12">#</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead className="text-right">Required Qty</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{selectedDate ? format(selectedDate, "dd-MM-yyyy") : ""}</TableCell>
-                      <TableCell>{toProperCase(item.item_name)}</TableCell>
-                      <TableCell>{toProperCase(item.cat_name)}</TableCell>
-                      <TableCell>{item.unit_short}</TableCell>
-                      <TableCell className="text-right font-semibold">{item.day_req_qty}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                   <TableRow className="bg-muted/50">
+                     <TableHead className="w-12">#</TableHead>
+                     <TableHead>Item Name</TableHead>
+                     <TableHead>Category</TableHead>
+                     <TableHead>Unit</TableHead>
+                     <TableHead className="text-right">Req Qty</TableHead>
+                     <TableHead className="text-right">Request Qty</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {items.map((item, index) => (
+                     <TableRow key={index}>
+                       <TableCell className="font-medium">{index + 1}</TableCell>
+                       <TableCell>{toProperCase(item.item_name)}</TableCell>
+                       <TableCell>{toProperCase(item.cat_name)}</TableCell>
+                       <TableCell>{item.unit_short}</TableCell>
+                       <TableCell className="text-right">{Number(item.day_req_qty).toFixed(2)}</TableCell>
+                       <TableCell className="text-right">
+                         <Input
+                           type="number"
+                           value={item.request_qty}
+                           onChange={(e) => updateRequestQty(index, e.target.value)}
+                           className="w-24 text-right ml-auto"
+                           min="0"
+                           step="0.01"
+                         />
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
               </Table>
             </div>
           ) : (

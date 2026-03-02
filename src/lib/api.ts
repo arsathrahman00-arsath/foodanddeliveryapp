@@ -478,6 +478,7 @@ export const bulkRequirementApi = {
 
 // Material Receipt API endpoints
 export const materialReceiptApi = {
+  getAll: () => getData("/get_mat_rec/"),
   getCategories: () => getData("/get_masteritemcategory/"),
   getSuppliersByCategory: (cat_code: string) =>
     postFormData("/get_supplier_category/", { cat_code }),

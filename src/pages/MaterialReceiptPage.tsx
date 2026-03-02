@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Package, Loader2, Trash2, Save, Plus, X } from "lucide-react";
+import { CalendarIcon, Package, Loader2, Trash2, Save, Plus, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { materialReceiptApi } from "@/lib/api";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn, numericOnly, toProperCase } from "@/lib/utils";
+import { cn, numericOnly, toProperCase, formatDateForTable } from "@/lib/utils";
 
 interface CategoryData {
   cat_name: string;
@@ -44,6 +44,15 @@ const standardizeUnit = (unit: string): string => {
   return unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase();
 };
 
+interface MatRecRecord {
+  mat_rec_date: string;
+  cat_name: string;
+  sup_name: string;
+  item_name: string;
+  unit_short: string;
+  mat_rec_qty: number | string;
+}
+
 const MaterialReceiptPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -56,13 +65,35 @@ const MaterialReceiptPage: React.FC = () => {
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  // Records table state
+  const [records, setRecords] = useState<MatRecRecord[]>([]);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+  const [recordSearch, setRecordSearch] = useState("");
 
   // Multi-category tabs
   const [categoryTabs, setCategoryTabs] = useState<CategoryTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>("");
 
+  // Fetch records on mount
+  const fetchRecords = async () => {
+    setIsLoadingRecords(true);
+    try {
+      const response = await materialReceiptApi.getAll();
+      if (response.status === "success" && Array.isArray(response.data)) {
+        setRecords(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch material receipts:", error);
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  };
+
   // Fetch categories on mount
   useEffect(() => {
+    fetchRecords();
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
       try {
@@ -78,6 +109,17 @@ const MaterialReceiptPage: React.FC = () => {
     };
     fetchCategories();
   }, []);
+
+  const filteredRecords = recordSearch.trim()
+    ? records.filter((r) => {
+        const q = recordSearch.toLowerCase();
+        return (
+          r.item_name?.toLowerCase().includes(q) ||
+          r.cat_name?.toLowerCase().includes(q) ||
+          r.sup_name?.toLowerCase().includes(q)
+        );
+      })
+    : records;
 
   // Categories already added as tabs
   const usedCatCodes = useMemo(() => categoryTabs.map(t => t.cat_code), [categoryTabs]);
@@ -339,6 +381,8 @@ const MaterialReceiptPage: React.FC = () => {
         setPurchaseType("");
         setCategoryTabs([]);
         setActiveTabId("");
+        setShowForm(false);
+        fetchRecords();
       }
     } catch (error) {
       console.error("Failed to save material receipts:", error);
@@ -350,11 +394,77 @@ const MaterialReceiptPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Material Receipt</h1>
-        <p className="text-muted-foreground">Record incoming materials from suppliers</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Material Receipt</h1>
+          <p className="text-muted-foreground">Record incoming materials from suppliers</p>
+        </div>
+        <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          {showForm ? "Hide Form" : "New Material Receipt"}
+        </Button>
       </div>
 
+      {/* Records Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-lg">Receipt Records</CardTitle>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search records..."
+                value={recordSearch}
+                onChange={(e) => setRecordSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingRecords ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <p className="text-center py-12 text-muted-foreground">No records found</p>
+          ) : (
+            <div className="overflow-x-auto border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Item Name</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead className="text-right">Received Qty</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRecords.map((rec, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{formatDateForTable(rec.mat_rec_date)}</TableCell>
+                      <TableCell>{toProperCase(rec.cat_name)}</TableCell>
+                      <TableCell>{toProperCase(rec.sup_name)}</TableCell>
+                      <TableCell>{toProperCase(rec.item_name)}</TableCell>
+                      <TableCell>{rec.unit_short}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {Number(rec.mat_rec_qty).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Form */}
+      {showForm && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -525,7 +635,7 @@ const MaterialReceiptPage: React.FC = () => {
                               <TableCell className="font-medium">{toProperCase(item.item_name)}</TableCell>
                               <TableCell>{toProperCase(item.unit_short)}</TableCell>
                               <TableCell>
-                                <span className="font-medium text-primary">{item.day_req_qty || "—"}</span>
+                                <span className="font-medium text-primary">{Number(item.day_req_qty).toFixed(2) || "—"}</span>
                               </TableCell>
                               <TableCell>
                                 <Input
@@ -587,6 +697,7 @@ const MaterialReceiptPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };
