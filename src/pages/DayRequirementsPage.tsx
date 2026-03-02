@@ -435,7 +435,7 @@ const DayRequirementsPage: React.FC = () => {
           const items = response.data.map((item: any) => ({
             ...item,
             req_qty: Number(item.req_qty) || 0,
-            request_qty: String(getMultipliedQty(Number(item.req_qty) || 0)),
+            request_qty: String(Number(getMultipliedQty(Number(item.req_qty) || 0)).toFixed(2)),
           }));
           setRecipeItems(items);
           setSelectedItems(new Set(items.map((item: RecipeItem) => item.item_name)));
@@ -552,7 +552,7 @@ const DayRequirementsPage: React.FC = () => {
             const finalItems = (validItems.length > 0 ? validItems : items).map(item => ({
               ...item,
               req_qty: Number(item.req_qty) || 0,
-              request_qty: String((Number(item.req_qty) || 0) * bulkTotalDays),
+              request_qty: String(((Number(item.req_qty) || 0) * bulkTotalDays).toFixed(2)),
             }));
             setBulkItems(finalItems);
             if (existingItems.length > 0 && validItems.length > 0) {
@@ -812,16 +812,14 @@ const DayRequirementsPage: React.FC = () => {
                                             <TableCell>{toProperCase(item.unit_short)}</TableCell>
                                             <TableCell className="text-right">{Number(item.req_qty).toFixed(2)}</TableCell>
                                             <TableCell className="text-right">
-                                              {selectedItems.has(item.item_name) ? (
-                                                <Input
-                                                  type="number"
-                                                  value={item.request_qty}
-                                                  onChange={(e) => updateRetailRequestQty(item.item_name, e.target.value)}
-                                                  className="w-24 text-right ml-auto"
-                                                  min="0"
-                                                  step="0.01"
-                                                />
-                                              ) : ""}
+                                              <Input
+                                                type="number"
+                                                value={item.request_qty}
+                                                onChange={(e) => updateRetailRequestQty(item.item_name, e.target.value)}
+                                                className="w-24 text-right ml-auto"
+                                                min="0"
+                                                step="0.01"
+                                              />
                                             </TableCell>
                                           </TableRow>
                                         ))}
