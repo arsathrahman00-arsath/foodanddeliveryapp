@@ -435,7 +435,7 @@ const DayRequirementsPage: React.FC = () => {
           const items = response.data.map((item: any) => ({
             ...item,
             req_qty: Number(item.req_qty) || 0,
-            request_qty: String(Number(getMultipliedQty(Number(item.req_qty) || 0)).toFixed(2)),
+            request_qty: "", // will be set by the recalc effect below
           }));
           setRecipeItems(items);
           setSelectedItems(new Set(items.map((item: RecipeItem) => item.item_name)));
@@ -449,6 +449,15 @@ const DayRequirementsPage: React.FC = () => {
     };
     fetchRecipeItems();
   }, [selectedRecipeCode, selectedRecipe, dialogOpen, activeTab]);
+
+  // Recalculate request_qty when totalDailyRequirementRound changes or items are loaded
+  useEffect(() => {
+    if (recipeItems.length === 0) return;
+    setRecipeItems(prev => prev.map(item => ({
+      ...item,
+      request_qty: String(((Number(item.req_qty) || 0) * totalDailyRequirementRound).toFixed(2)),
+    })));
+  }, [totalDailyRequirementRound]);
 
   const toggleItemSelection = (itemName: string) => {
     const newSelection = new Set(selectedItems);
