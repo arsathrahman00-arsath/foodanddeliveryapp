@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -68,6 +69,7 @@ interface RecipeItem {
   cat_name: string;
   unit_short: string;
   req_qty: number;
+  request_qty: string;
 }
 
 interface BulkItem {
@@ -77,6 +79,7 @@ interface BulkItem {
   cat_code: string;
   unit_short: string;
   req_qty: number;
+  request_qty: string;
   message?: string;
 }
 
@@ -429,8 +432,13 @@ const DayRequirementsPage: React.FC = () => {
         const formattedDate = format(selectedDate, "yyyy-MM-dd");
         const response = await dayRequirementsApi.getRecipeItems(selectedRecipe.recipe_type, formattedDate);
         if (response.status === "success" && response.data) {
-          setRecipeItems(response.data);
-          setSelectedItems(new Set(response.data.map((item: RecipeItem) => item.item_name)));
+          const items = response.data.map((item: any) => ({
+            ...item,
+            req_qty: Number(item.req_qty) || 0,
+            request_qty: String(getMultipliedQty(Number(item.req_qty) || 0)),
+          }));
+          setRecipeItems(items);
+          setSelectedItems(new Set(items.map((item: RecipeItem) => item.item_name)));
         }
       } catch (error) {
         console.error("Failed to fetch recipe items:", error);
@@ -454,11 +462,15 @@ const DayRequirementsPage: React.FC = () => {
     else setSelectedItems(new Set(recipeItems.map(item => item.item_name)));
   };
 
+  const updateRetailRequestQty = (itemName: string, value: string) => {
+    setRecipeItems(prev => prev.map(item => item.item_name === itemName ? { ...item, request_qty: value } : item));
+  };
+
   const getMultipliedQty = (reqQty: number) => (Number(reqQty) || 0) * totalDailyRequirementRound;
 
   const selectedItemsTotal = recipeItems
     .filter(item => selectedItems.has(item.item_name))
-    .reduce((sum, item) => sum + getMultipliedQty(item.req_qty), 0);
+    .reduce((sum, item) => sum + (Number(item.request_qty) || 0), 0);
 
   const handleRetailSubmit = async () => {
     if (!selectedDate || !selectedRecipeCode || !selectedRecipe || selectedItems.size === 0) {
@@ -497,7 +509,7 @@ const DayRequirementsPage: React.FC = () => {
           item_name: item.item_name,
           cat_name: item.cat_name,
           unit_short: item.unit_short,
-          day_req_qty: String(getMultipliedQty(item.req_qty)),
+          day_req_qty: String(item.request_qty || getMultipliedQty(item.req_qty)),
           purc_type: "Retail",
           created_by: createdBy,
         });
@@ -529,7 +541,7 @@ const DayRequirementsPage: React.FC = () => {
       setIsLoadingBulkItems(true);
       try {
         const response = await bulkItemApi.getAll(format(bulkFromDate, "yyyy-MM-dd"), format(bulkToDate, "yyyy-MM-dd"));
-        if (!cancelled && response.status === "success" && response.data) {
+      if (!cancelled && response.status === "success" && response.data) {
           const items: BulkItem[] = Array.isArray(response.data) ? response.data : [];
           const existingItems = items.filter(item => item.message === "This item already exists");
           if (existingItems.length > 0 && existingItems.length === items.length) {
@@ -537,7 +549,12 @@ const DayRequirementsPage: React.FC = () => {
             setBulkItems([]);
           } else {
             const validItems = items.filter(item => item.message !== "This item already exists");
-            setBulkItems(validItems.length > 0 ? validItems : items);
+            const finalItems = (validItems.length > 0 ? validItems : items).map(item => ({
+              ...item,
+              req_qty: Number(item.req_qty) || 0,
+              request_qty: String((Number(item.req_qty) || 0) * bulkTotalDays),
+            }));
+            setBulkItems(finalItems);
             if (existingItems.length > 0 && validItems.length > 0) {
               toast({ title: "Info", description: `${existingItems.length} item(s) already exist and have been excluded.` });
             }
@@ -562,6 +579,10 @@ const DayRequirementsPage: React.FC = () => {
     if (newSelection.has(itemName)) newSelection.delete(itemName);
     else newSelection.add(itemName);
     setSelectedBulkItems(newSelection);
+  };
+
+  const updateBulkRequestQty = (itemName: string, value: string) => {
+    setBulkItems(prev => prev.map(item => item.item_name === itemName ? { ...item, request_qty: value } : item));
   };
 
   const toggleAllBulkItems = () => {
@@ -606,7 +627,7 @@ const DayRequirementsPage: React.FC = () => {
             item_name: item.item_name,
             cat_name: item.cat_name,
             unit_short: item.unit_short,
-            day_req_qty: String(item.req_qty),
+            day_req_qty: String(item.request_qty || item.req_qty),
             created_by: createdBy,
             purc_type: "Bulk",
           });
@@ -759,7 +780,7 @@ const DayRequirementsPage: React.FC = () => {
                                 <TableHead>Category</TableHead>
                                 <TableHead>Unit</TableHead>
                                 <TableHead className="text-right">Req Qty</TableHead>
-                                <TableHead className="text-right">Total Qty</TableHead>
+                                 <TableHead className="text-right">Request Qty</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -789,8 +810,19 @@ const DayRequirementsPage: React.FC = () => {
                                             <TableCell className="font-medium">{toProperCase(item.item_name)}</TableCell>
                                             <TableCell>{toProperCase(item.cat_name)}</TableCell>
                                             <TableCell>{toProperCase(item.unit_short)}</TableCell>
-                                            <TableCell className="text-right">{item.req_qty}</TableCell>
-                                            <TableCell className="text-right font-semibold">{selectedItems.has(item.item_name) ? getMultipliedQty(item.req_qty) : ""}</TableCell>
+                                            <TableCell className="text-right">{Number(item.req_qty).toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                              {selectedItems.has(item.item_name) ? (
+                                                <Input
+                                                  type="number"
+                                                  value={item.request_qty}
+                                                  onChange={(e) => updateRetailRequestQty(item.item_name, e.target.value)}
+                                                  className="w-24 text-right ml-auto"
+                                                  min="0"
+                                                  step="0.01"
+                                                />
+                                              ) : ""}
+                                            </TableCell>
                                           </TableRow>
                                         ))}
                                       </React.Fragment>
@@ -912,7 +944,7 @@ const DayRequirementsPage: React.FC = () => {
                                 <TableHead>Category</TableHead>
                                 <TableHead>Unit</TableHead>
                                 <TableHead className="text-right">Req Qty</TableHead>
-                                <TableHead className="text-right">Total Qty</TableHead>
+                                <TableHead className="text-right">Request Qty</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -927,9 +959,18 @@ const DayRequirementsPage: React.FC = () => {
                                   <TableCell className="font-medium">{toProperCase(item.item_name)}</TableCell>
                                   <TableCell>{toProperCase(item.cat_name)}</TableCell>
                                   <TableCell>{toProperCase(item.unit_short)}</TableCell>
-                                  <TableCell className="text-right">{item.req_qty}</TableCell>
-                                  <TableCell className="text-right font-semibold">
-                                    {selectedBulkItems.has(item.item_name) ? (Number(item.req_qty) || 0) * bulkTotalDays : ""}
+                                  <TableCell className="text-right">{Number(item.req_qty).toFixed(2)}</TableCell>
+                                  <TableCell className="text-right">
+                                    {selectedBulkItems.has(item.item_name) ? (
+                                      <Input
+                                        type="number"
+                                        value={item.request_qty}
+                                        onChange={(e) => updateBulkRequestQty(item.item_name, e.target.value)}
+                                        className="w-24 text-right ml-auto"
+                                        min="0"
+                                        step="0.01"
+                                      />
+                                    ) : ""}
                                   </TableCell>
                                 </TableRow>
                               ))}
