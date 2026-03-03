@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn, toProperCase, formatDateForTable, numericOnly } from "@/lib/utils";
 
 interface MatRecRecord {
@@ -36,6 +37,7 @@ interface ItemRow {
   unit_short: string;
   day_req_qty: string;
   received_qty: string;
+  selected: boolean;
 }
 
 interface CategoryTab {
@@ -202,6 +204,7 @@ const MaterialReceiptPage: React.FC = () => {
               unit_short: standardizeUnit(item.unit_short || ""),
               day_req_qty: String(item.day_req_qty || "0"),
               received_qty: "",
+              selected: false,
             })),
             isLoadingItems: false,
           } : tab
@@ -241,6 +244,20 @@ const MaterialReceiptPage: React.FC = () => {
     ));
   };
 
+  const toggleItemSelection = (tabId: string, index: number) => {
+    setCategoryTabs(prev => prev.map(tab =>
+      tab.id === tabId ? { ...tab, items: tab.items.map((item, i) => i === index ? { ...item, selected: !item.selected } : item) } : tab
+    ));
+  };
+
+  const toggleAllItemsInTab = (tabId: string) => {
+    setCategoryTabs(prev => prev.map(tab => {
+      if (tab.id !== tabId) return tab;
+      const allSelected = tab.items.every(item => item.selected);
+      return { ...tab, items: tab.items.map(item => ({ ...item, selected: !allSelected })) };
+    }));
+  };
+
   const removeTabItem = (tabId: string, index: number) => {
     setCategoryTabs(prev => prev.map(tab => {
       if (tab.id !== tabId || tab.items.length <= 1) return tab;
@@ -256,11 +273,11 @@ const MaterialReceiptPage: React.FC = () => {
     });
   };
 
-  const allValidItems = useMemo(() => {
+  const selectedItems = useMemo(() => {
     const result: { tab: CategoryTab; item: ItemRow }[] = [];
     categoryTabs.forEach(tab => {
       tab.items.forEach(item => {
-        if (item.received_qty && parseFloat(item.received_qty) > 0) result.push({ tab, item });
+        if (item.selected) result.push({ tab, item });
       });
     });
     return result;
@@ -277,7 +294,10 @@ const MaterialReceiptPage: React.FC = () => {
     if (!purchaseReqDate) { toast({ title: "Validation Error", description: "Please select a Purchase Request Date", variant: "destructive" }); return; }
     if (!purchaseType) { toast({ title: "Validation Error", description: "Please select a Purchase Type", variant: "destructive" }); return; }
     if (categoryTabs.length === 0) { toast({ title: "Validation Error", description: "Please add at least one category", variant: "destructive" }); return; }
-    if (allValidItems.length === 0) { toast({ title: "Validation Error", description: "Please fill in at least one item with received quantity", variant: "destructive" }); return; }
+
+    // Only save selected items that have received_qty
+    const itemsToSave = selectedItems.filter(({ item }) => item.received_qty && parseFloat(item.received_qty) > 0);
+    if (itemsToSave.length === 0) { toast({ title: "Validation Error", description: "Please select items and fill in received quantity", variant: "destructive" }); return; }
 
     setIsSubmitting(true);
     const createdBy = user?.user_name || "system";
@@ -286,7 +306,7 @@ const MaterialReceiptPage: React.FC = () => {
 
     try {
       const results = await Promise.allSettled(
-        allValidItems.map(({ tab, item }) =>
+        itemsToSave.map(({ tab, item }) =>
           materialReceiptApi.create({
             mat_rec_date: formattedReceiptDate,
             day_req_date: formattedPurchaseReqDate,
@@ -308,11 +328,11 @@ const MaterialReceiptPage: React.FC = () => {
         if (result.status === "fulfilled") {
           const res = result.value;
           if (res.status === "error") {
-            const itemName = allValidItems[idx].item.item_name;
+            const itemName = itemsToSave[idx].item.item_name;
             if (res.message?.toLowerCase().includes("already exists")) duplicates.push(itemName);
             else otherErrors.push(`${itemName}: ${res.message}`);
           } else successCount++;
-        } else otherErrors.push(allValidItems[idx].item.item_name);
+        } else otherErrors.push(itemsToSave[idx].item.item_name);
       });
 
       if (successCount > 0) toast({ title: "Success", description: `${successCount} material receipt(s) saved successfully` });
@@ -458,6 +478,13 @@ const MaterialReceiptPage: React.FC = () => {
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-muted/30">
+                                <TableHead className="w-12">
+                                  <Checkbox
+                                    checked={tab.items.length > 0 && tab.items.every(item => item.selected)}
+                                    onCheckedChange={() => toggleAllItemsInTab(tab.id)}
+                                    aria-label="Select all items"
+                                  />
+                                </TableHead>
                                 <TableHead>Item Name</TableHead>
                                 <TableHead className="w-32">Unit of Measure</TableHead>
                                 <TableHead className="w-36">Allocated Qty</TableHead>
@@ -467,7 +494,14 @@ const MaterialReceiptPage: React.FC = () => {
                             </TableHeader>
                             <TableBody>
                               {tab.items.map((item, index) => (
-                                <TableRow key={`${item.item_name}-${index}`}>
+                                <TableRow key={`${item.item_name}-${index}`} data-state={item.selected ? "selected" : undefined}>
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={item.selected}
+                                      onCheckedChange={() => toggleItemSelection(tab.id, index)}
+                                      aria-label={`Select ${item.item_name}`}
+                                    />
+                                  </TableCell>
                                   <TableCell className="font-medium">{toProperCase(item.item_name)}</TableCell>
                                   <TableCell>{toProperCase(item.unit_short)}</TableCell>
                                   <TableCell><span className="font-medium text-primary">{Number(item.day_req_qty).toFixed(2) || "—"}</span></TableCell>
@@ -494,15 +528,15 @@ const MaterialReceiptPage: React.FC = () => {
                 </Tabs>
               )}
 
-              {allValidItems.length > 0 && (
+              {selectedItems.length > 0 && (
                 <div className="flex items-center justify-between pt-4 border-t">
                   <p className="text-sm text-muted-foreground">
-                    Total items with quantity: <span className="font-medium text-foreground">{allValidItems.length}</span>
-                    {" across "}<span className="font-medium text-foreground">{new Set(allValidItems.map(v => v.tab.cat_name)).size}</span>{" category(ies)"}
+                    Selected items: <span className="font-medium text-foreground">{selectedItems.length}</span>
+                    {" across "}<span className="font-medium text-foreground">{new Set(selectedItems.map(v => v.tab.cat_name)).size}</span>{" category(ies)"}
                   </p>
                   <Button onClick={handleSubmit} disabled={isSubmitting} className="gap-2">
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    Save Receipt ({allValidItems.length} items)
+                    Save Selected ({selectedItems.filter(({ item }) => item.received_qty && parseFloat(item.received_qty) > 0).length} items)
                   </Button>
                 </div>
               )}
