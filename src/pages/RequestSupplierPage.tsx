@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn, toProperCase } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ const RequestSupplierPage: React.FC = () => {
 
   // Data state
   const [items, setItems] = useState<SupplierItem[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -131,6 +133,7 @@ const RequestSupplierPage: React.FC = () => {
   // Clear items when filters change
   useEffect(() => {
     setItems([]);
+    setSelectedIndices(new Set());
   }, [selectedDate, selectedRecipeCode, selectedSupplier, selectedCatCode]);
 
   const selectedCategory = categories.find((c) => c.cat_code === selectedCatCode);
@@ -140,6 +143,23 @@ const RequestSupplierPage: React.FC = () => {
 
   const updateRequestQty = (index: number, value: string) => {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, request_qty: value } : item));
+  };
+
+  const toggleSelection = (index: number) => {
+    setSelectedIndices(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIndices.size === items.length) {
+      setSelectedIndices(new Set());
+    } else {
+      setSelectedIndices(new Set(items.map((_, i) => i)));
+    }
   };
 
   const handleFetchItems = async () => {
@@ -158,12 +178,15 @@ const RequestSupplierPage: React.FC = () => {
 
       if (response.status === "success" && response.data) {
         const raw = Array.isArray(response.data) ? response.data : [];
-        setItems(raw.map((item: any) => ({
+        const mapped = raw.map((item: any) => ({
           ...item,
           request_qty: String(Number(item.day_req_qty) || 0),
-        })));
+        }));
+        setItems(mapped);
+        setSelectedIndices(new Set(mapped.map((_: any, i: number) => i)));
       } else {
         setItems([]);
+        setSelectedIndices(new Set());
         toast({
           title: "No Data",
           description: response.message || "No items found for the selected filters",
@@ -178,7 +201,12 @@ const RequestSupplierPage: React.FC = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!selectedDate || !selectedRecipe || !selectedCategory || items.length === 0) return;
+    if (!selectedDate || !selectedRecipe || !selectedCategory) return;
+    const selectedItems = items.filter((_, i) => selectedIndices.has(i));
+    if (selectedItems.length === 0) {
+      toast({ title: "No Selection", description: "Please select at least one item to download", variant: "destructive" });
+      return;
+    }
     setIsDownloading(true);
     try {
       const result = await generateSupplierReqPdf({
@@ -186,7 +214,7 @@ const RequestSupplierPage: React.FC = () => {
         recipeType: selectedRecipe.recipe_type,
         supplierName: selectedSupplier,
         categoryName: selectedCategory.cat_name,
-        items,
+        items: selectedItems,
       });
       const { handlePdfResult } = await import("@/lib/handlePdfResult");
       handlePdfResult(result);
@@ -295,9 +323,9 @@ const RequestSupplierPage: React.FC = () => {
               Get Items
             </Button>
             {items.length > 0 && (
-              <Button onClick={handleDownloadPdf} variant="outline" disabled={isDownloading} className="gap-2">
+              <Button onClick={handleDownloadPdf} variant="outline" disabled={isDownloading || selectedIndices.size === 0} className="gap-2">
                 {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Download PDF
+                Download PDF ({selectedIndices.size})
               </Button>
             )}
           </div>
@@ -313,6 +341,13 @@ const RequestSupplierPage: React.FC = () => {
               <Table>
                 <TableHeader>
                    <TableRow className="bg-muted/50">
+                     <TableHead className="w-12">
+                       <Checkbox
+                         checked={selectedIndices.size === items.length && items.length > 0}
+                         onCheckedChange={toggleSelectAll}
+                         aria-label="Select all"
+                       />
+                     </TableHead>
                      <TableHead className="w-12">#</TableHead>
                      <TableHead>Item Name</TableHead>
                      <TableHead>Category</TableHead>
@@ -323,7 +358,14 @@ const RequestSupplierPage: React.FC = () => {
                  </TableHeader>
                  <TableBody>
                    {items.map((item, index) => (
-                     <TableRow key={index}>
+                     <TableRow key={index} data-state={selectedIndices.has(index) ? "selected" : undefined}>
+                       <TableCell>
+                         <Checkbox
+                           checked={selectedIndices.has(index)}
+                           onCheckedChange={() => toggleSelection(index)}
+                           aria-label={`Select ${item.item_name}`}
+                         />
+                       </TableCell>
                        <TableCell className="font-medium">{index + 1}</TableCell>
                        <TableCell>{toProperCase(item.item_name)}</TableCell>
                        <TableCell>{toProperCase(item.cat_name)}</TableCell>
