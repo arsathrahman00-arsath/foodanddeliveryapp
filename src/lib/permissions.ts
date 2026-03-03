@@ -25,7 +25,7 @@ const permissionRouteMap: Record<string, string> = {
   "preparation:day_requirements": "/dashboard/day-requirements",
   "preparation:material_receipt": "/dashboard/material-receipt",
   "preparation:request_for_supplier": "/dashboard/request-supplier",
-  "preparation:recipe_cost": "/dashboard/recipe-cost",
+  "preparation:daily_recipe_cost": "/dashboard/recipe-cost",
   // API returns module_id "Master" (capital M) with sub_mod_id "Daily_Recipe_Cost"
   "master:daily_recipe_cost": "/dashboard/recipe-cost",
   // Packing (standalone)
@@ -60,7 +60,9 @@ export function buildAllowedRoutes(permissions: UserPermission[]): Set<string> {
 
   for (const p of permissions) {
     const moduleKey = String(p.module_id).toLowerCase();
-    const subKey = String(p.sub_mod_id || "").trim().toLowerCase();
+    const subKey = String(p.sub_mod_id || "")
+      .trim()
+      .toLowerCase();
     const compositeKey = `${moduleKey}:${subKey}`;
 
     const route = permissionRouteMap[compositeKey];
