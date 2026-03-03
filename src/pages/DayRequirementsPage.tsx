@@ -88,7 +88,13 @@ interface BulkExisting {
   purc_type: string;
   purc_id: string;
   created_by: string;
+  item_name?: string;
+  item_code?: string;
+  unit_short?: string;
+  purchase_qty?: string | number;
 }
+
+// Search filter for bulk now includes new fields
 
 const DayRequirementsPage: React.FC = () => {
   const { user } = useAuth();
@@ -196,6 +202,9 @@ const DayRequirementsPage: React.FC = () => {
         return (
           formatDateForTable(req.day_req_date).toLowerCase().includes(q) ||
           (req.purc_type && req.purc_type.toLowerCase().includes(q)) ||
+          (req.purc_id && req.purc_id.toLowerCase().includes(q)) ||
+          (req.item_name && req.item_name.toLowerCase().includes(q)) ||
+          (req.unit_short && req.unit_short.toLowerCase().includes(q)) ||
           (req.created_by && req.created_by.toLowerCase().includes(q))
         );
       })
@@ -232,7 +241,7 @@ const DayRequirementsPage: React.FC = () => {
     setDownloadingBulkIndex(index);
     try {
       const formData = new FormData();
-      formData.append("day_req_date", req.day_req_date?.split("T")[0] || req.day_req_date);
+      formData.append("item_code", req.item_code || "");
       formData.append("purc_id", req.purc_id || "");
       formData.append("purc_type", req.purc_type || "Bulk");
       const response = await fetch("https://ngrchatbot.whindia.in/fpda/pdf_down/", {
@@ -242,7 +251,7 @@ const DayRequirementsPage: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
       if (result.status === "success" && result.data) {
-        const pdfResult = await generatePdfFromData(result.data, req.day_req_date, req.purc_type || "Bulk");
+        const pdfResult = await generateBulkPdfFromData(result.data, req);
         handlePdfResult(pdfResult);
       } else {
         throw new Error(result.message || "No data returned");
@@ -253,6 +262,46 @@ const DayRequirementsPage: React.FC = () => {
     } finally {
       setDownloadingBulkIndex(null);
     }
+  };
+
+  const generateBulkPdfFromData = async (data: any[], req: BulkExisting) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Bulk Purchase Request Report", pageWidth / 2, 18, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Purchase ID: ${req.purc_id || "-"}`, 14, 28);
+    doc.text(`Purchase Type: ${req.purc_type || "Bulk"}`, pageWidth - 14, 28, { align: "right" });
+
+    const rows = (Array.isArray(data) ? data : []).map((item: any) => {
+      const rawDate = item.day_req_date || item.date || "";
+      const dateStr = rawDate.split("T")[0];
+      const parts = dateStr.split("-");
+      const formattedDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateStr;
+      return [
+        formattedDate,
+        item.item_name || "",
+        item.unit_short || "",
+        String(item.day_req_qty || item.total_qty || item.purchase_qty || ""),
+        item.created_by || "",
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 36,
+      head: [["Date", "Item Name", "Unit", "Total Quantity", "Created By"]],
+      body: rows,
+      theme: "grid",
+      headStyles: { fillColor: [59, 130, 246], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+
+    return savePdfFile(doc, `Bulk_Purchase_${req.purc_id || "report"}.pdf`);
   };
 
   const generatePdfFromData = async (data: any[], dateStr: string, purcType: string) => {
@@ -1084,28 +1133,32 @@ const DayRequirementsPage: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead>Date</TableHead>
+                      <TableHead>Purchase ID</TableHead>
                       <TableHead>Purchase Type</TableHead>
-                      <TableHead>Purchase No</TableHead>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Unit</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
                       <TableHead>Created By</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingBulk ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
                     ) : filteredBulk.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No bulk requirements found</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No bulk requirements found</TableCell></TableRow>
                     ) : (
                       filteredBulk.map((req, index) => (
                         <TableRow key={index}>
-                          <TableCell>{formatDateForTable(req.day_req_date)}</TableCell>
+                          <TableCell>{req.purc_id || "-"}</TableCell>
                           <TableCell>
                             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground">
                               {req.purc_type || "Bulk"}
                             </span>
                           </TableCell>
-                          <TableCell>{req.purc_id || "-"}</TableCell>
+                          <TableCell>{toProperCase(req.item_name || "-")}</TableCell>
+                          <TableCell>{req.unit_short || "-"}</TableCell>
+                          <TableCell className="text-right">{req.purchase_qty != null ? Number(req.purchase_qty).toFixed(2) : "-"}</TableCell>
                           <TableCell>{toProperCase(req.created_by)}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownloadBulkPdf(req, index)} disabled={downloadingBulkIndex === index}>

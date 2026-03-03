@@ -43,7 +43,8 @@ interface CategoryTab {
   cat_name: string;
   cat_code: string;
   supplierName: string;
-  supplierOptions: string[];
+  supplierCode: string;
+  supplierOptions: { sup_name: string; sup_code: string }[];
   supplierError: string;
   isLoadingSupplier: boolean;
   items: ItemRow[];
@@ -137,22 +138,26 @@ const MaterialReceiptPage: React.FC = () => {
   const fetchSupplierForTab = async (tabId: string, catCode: string) => {
     try {
       const response = await materialReceiptApi.getSuppliersByCategory(catCode);
-      const names: string[] = [];
+      const options: { sup_name: string; sup_code: string }[] = [];
       let errorMsg = "";
       if (response.status === "success") {
-        const topSupName = (response as any).sup_name;
+        const res = response as any;
+        const topSupName = res.sup_name;
+        const topSupCode = res.sup_code;
         const data = response.data;
-        if (topSupName) names.push(topSupName);
-        else if (data) {
-          if (typeof data === "string") names.push(data);
-          else if (Array.isArray(data)) data.forEach((d: any) => { if (d.sup_name) names.push(d.sup_name); });
-          else if (data.sup_name) names.push(data.sup_name);
+        if (topSupName) {
+          const names = Array.isArray(topSupName) ? topSupName : [topSupName];
+          const codes = Array.isArray(topSupCode) ? topSupCode : [topSupCode || ""];
+          names.forEach((n: string, i: number) => options.push({ sup_name: n, sup_code: codes[i] || "" }));
+        } else if (data) {
+          if (Array.isArray(data)) data.forEach((d: any) => { if (d.sup_name) options.push({ sup_name: d.sup_name, sup_code: d.sup_code || "" }); });
+          else if (data.sup_name) options.push({ sup_name: data.sup_name, sup_code: data.sup_code || "" });
         }
       } else if (response.status === "error") {
         errorMsg = (response as any).message || "Supplier not found for this category";
       }
       setCategoryTabs(prev => prev.map(tab =>
-        tab.id === tabId ? { ...tab, supplierOptions: names, supplierName: names.length === 1 ? names[0] : "", supplierError: names.length === 0 && !errorMsg ? "No supplier found" : errorMsg, isLoadingSupplier: false } : tab
+        tab.id === tabId ? { ...tab, supplierOptions: options, supplierName: options.length === 1 ? options[0].sup_name : "", supplierCode: options.length === 1 ? options[0].sup_code : "", supplierError: options.length === 0 && !errorMsg ? "No supplier found" : errorMsg, isLoadingSupplier: false } : tab
       ));
     } catch (error) {
       setCategoryTabs(prev => prev.map(tab =>
@@ -167,7 +172,7 @@ const MaterialReceiptPage: React.FC = () => {
     const tabId = `tab-${cat.cat_code}-${Date.now()}`;
     const newTab: CategoryTab = {
       id: tabId, cat_name: cat.cat_name, cat_code: cat.cat_code,
-      supplierName: "", supplierOptions: [], supplierError: "",
+      supplierName: "", supplierCode: "", supplierOptions: [], supplierError: "",
       isLoadingSupplier: true, items: [], isLoadingItems: false,
     };
     setCategoryTabs(prev => [...prev, newTab]);
@@ -175,14 +180,17 @@ const MaterialReceiptPage: React.FC = () => {
     fetchSupplierForTab(tabId, cat.cat_code);
   }, [categories]);
 
-  const fetchItemsForTab = async (tabId: string, catName: string) => {
+  const fetchItemsForTab = async (tabId: string, catName: string, supCode?: string) => {
     if (!purchaseReqDate || !purchaseType) return;
-    setCategoryTabs(prev => prev.map(tab => tab.id === tabId ? { ...tab, isLoadingItems: true } : tab));
+    const tab = categoryTabs.find(t => t.id === tabId);
+    const resolvedSupCode = supCode || tab?.supplierCode || "";
+    setCategoryTabs(prev => prev.map(t => t.id === tabId ? { ...t, isLoadingItems: true } : t));
     try {
       const response = await materialReceiptApi.getItemsByDateAndCategory({
         day_req_date: format(purchaseReqDate, "yyyy-MM-dd"),
         purc_type: purchaseType,
         cat_name: catName,
+        sup_code: resolvedSupCode,
       });
       if (response.status === "success" && response.data) {
         const rawItems = Array.isArray(response.data) ? response.data : [];
@@ -222,7 +230,9 @@ const MaterialReceiptPage: React.FC = () => {
   }, [categoryTabs.length]);
 
   const updateTabSupplier = (tabId: string, value: string) => {
-    setCategoryTabs(prev => prev.map(tab => tab.id === tabId ? { ...tab, supplierName: value } : tab));
+    const tab = categoryTabs.find(t => t.id === tabId);
+    const sup = tab?.supplierOptions.find(s => s.sup_name === value);
+    setCategoryTabs(prev => prev.map(t => t.id === tabId ? { ...t, supplierName: value, supplierCode: sup?.sup_code || "" } : t));
   };
 
   const updateTabItemQty = (tabId: string, index: number, value: string) => {
@@ -432,7 +442,7 @@ const MaterialReceiptPage: React.FC = () => {
                           <Select value={tab.supplierName} onValueChange={(v) => updateTabSupplier(tab.id, v)}>
                             <SelectTrigger className="w-full"><SelectValue placeholder="Select supplier" /></SelectTrigger>
                             <SelectContent className="z-[200] bg-popover">
-                              {tab.supplierOptions.map(sup => (<SelectItem key={sup} value={sup}>{sup}</SelectItem>))}
+                              {tab.supplierOptions.map(sup => (<SelectItem key={sup.sup_code || sup.sup_name} value={sup.sup_name}>{sup.sup_name}</SelectItem>))}
                             </SelectContent>
                           </Select>
                         )}

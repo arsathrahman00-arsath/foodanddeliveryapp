@@ -40,7 +40,7 @@ const RequestSupplierPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [recipeTypes, setRecipeTypes] = useState<RecipeData[]>([]);
   const [selectedRecipeCode, setSelectedRecipeCode] = useState("");
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<{ sup_name: string; sup_code: string }[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [selectedCatCode, setSelectedCatCode] = useState("");
@@ -110,20 +110,16 @@ const RequestSupplierPage: React.FC = () => {
       try {
         const response = await supplierRequisitionApi.getSuppliersByCategory(selectedCatCode);
         const res = response as any;
+        const parsed: { sup_name: string; sup_code: string }[] = [];
         if (response.status === "success" && res.sup_name) {
-          setSuppliers(
-            Array.isArray(res.sup_name)
-              ? res.sup_name
-              : [res.sup_name]
-          );
+          const names = Array.isArray(res.sup_name) ? res.sup_name : [res.sup_name];
+          const codes = Array.isArray(res.sup_code) ? res.sup_code : [res.sup_code || ""];
+          names.forEach((n: string, i: number) => parsed.push({ sup_name: n, sup_code: codes[i] || "" }));
         } else if (response.status === "success" && response.data) {
-          const names = Array.isArray(response.data)
-            ? response.data.map((s: any) => s.sup_name || s)
-            : [];
-          setSuppliers(names);
-        } else {
-          setSuppliers([]);
+          const arr = Array.isArray(response.data) ? response.data : [];
+          arr.forEach((s: any) => parsed.push({ sup_name: s.sup_name || s, sup_code: s.sup_code || "" }));
         }
+        setSuppliers(parsed);
       } catch (error) {
         console.error("Failed to fetch suppliers by category:", error);
         setSuppliers([]);
@@ -148,11 +144,13 @@ const RequestSupplierPage: React.FC = () => {
 
   const handleFetchItems = async () => {
     if (!selectedDate || !selectedRecipeCode || !selectedCatCode) return;
+    const selectedSup = suppliers.find(s => s.sup_name === selectedSupplier);
 
     setIsLoadingItems(true);
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       const response = await supplierRequisitionApi.getItems({
+        sup_code: selectedSup?.sup_code || "",
         cat_code: selectedCatCode,
         day_req_date: formattedDate,
         recipe_code: selectedRecipeCode,
@@ -283,7 +281,7 @@ const RequestSupplierPage: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent className="z-[200] bg-popover">
                   {suppliers.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s.sup_code || s.sup_name} value={s.sup_name}>{s.sup_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -445,7 +445,7 @@ export const mediaApi = {
 
 // Supplier Requisition API endpoints
 export const supplierRequisitionApi = {
-  getItems: (data: { cat_code: string; day_req_date: string; recipe_code: string }) =>
+  getItems: (data: { sup_code: string; cat_code: string; day_req_date: string; recipe_code: string }) =>
     postFormData("/requestionsupplier/", data),
   getSuppliersByCategory: (cat_code: string) =>
     postFormData("/get_supplier_category/", { cat_code }),
@@ -486,6 +486,7 @@ export const materialReceiptApi = {
     day_req_date: string;
     purc_type: string;
     cat_name: string;
+    sup_code: string;
   }) => postFormData("/day_req_qty_materiel/", data),
   create: (data: {
     mat_rec_date: string;
