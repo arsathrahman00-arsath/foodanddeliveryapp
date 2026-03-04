@@ -10,12 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -169,9 +164,7 @@ const RecipeCostPage: React.FC = () => {
       setIngredients([]);
       return;
     }
-    const selectedType = recipeTypes.find(
-      (rt) => String(rt.recipe_code) === selectedRecipeCode
-    );
+    const selectedType = recipeTypes.find((rt) => String(rt.recipe_code) === selectedRecipeCode);
     if (!selectedType) return;
 
     const fetchIngredients = async () => {
@@ -206,20 +199,12 @@ const RecipeCostPage: React.FC = () => {
 
   // Update ingredient field
   const updateIngredient = (index: number, field: "req_qty" | "item_rate", value: string) => {
-    setIngredients((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, [field]: Number(value) || 0 } : item
-      )
-    );
+    setIngredients((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: Number(value) || 0 } : item)));
   };
 
   // Update manual ingredient text field
   const updateIngredientText = (index: number, field: "cat_name" | "item_name" | "unit_short", value: string) => {
-    setIngredients((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
-    );
+    setIngredients((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
   // Add manual ingredient row
@@ -246,10 +231,7 @@ const RecipeCostPage: React.FC = () => {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const grandTotal = ingredients.reduce(
-    (sum, item) => sum + item.req_qty * item.item_rate,
-    0
-  );
+  const grandTotal = ingredients.reduce((sum, item) => sum + item.req_qty * item.item_rate, 0);
 
   // Reset dialog
   const resetDialog = () => {
@@ -284,9 +266,7 @@ const RecipeCostPage: React.FC = () => {
   // Set recipe code once recipeTypes are loaded in edit mode
   useEffect(() => {
     if (isEditMode && editRecord && recipeTypes.length > 0 && !selectedRecipeCode) {
-      const match = recipeTypes.find(
-        (rt) => rt.recipe_type === editRecord.recipe_type
-      );
+      const match = recipeTypes.find((rt) => rt.recipe_type === editRecord.recipe_type);
       if (match) {
         setSelectedRecipeCode(String(match.recipe_code));
       }
@@ -314,9 +294,7 @@ const RecipeCostPage: React.FC = () => {
       return;
     }
 
-    const selectedType = recipeTypes.find(
-      (rt) => String(rt.recipe_code) === selectedRecipeCode
-    );
+    const selectedType = recipeTypes.find((rt) => String(rt.recipe_code) === selectedRecipeCode);
     if (!selectedType) return;
 
     setIsSubmitting(true);
@@ -349,9 +327,7 @@ const RecipeCostPage: React.FC = () => {
 
       toast({
         title: "Success",
-        description: isEditMode
-          ? "Recipe cost updated successfully"
-          : "Recipe cost saved successfully",
+        description: isEditMode ? "Recipe cost updated successfully" : "Recipe cost saved successfully",
       });
       resetDialog();
       setDialogOpen(false);
@@ -405,9 +381,7 @@ const RecipeCostPage: React.FC = () => {
             <DollarSign className="w-6 h-6 text-primary" />
             Daily Recipe Cost
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track ingredient costs for recipe types on a daily basis
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Track ingredient costs for recipe types on a daily basis</p>
         </div>
         <Button onClick={handleOpenAdd} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -460,9 +434,7 @@ const RecipeCostPage: React.FC = () => {
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{formatDateForTable(record.day_rcp_date)}</TableCell>
                       <TableCell>{record.recipe_type}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        ₹{Number(record.total_rate).toFixed(2)}
-                      </TableCell>
+                      <TableCell className="text-right font-medium">₹{Number(record.total_rate).toFixed(2)}</TableCell>
                       <TableCell>{record.created_by}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
@@ -531,7 +503,7 @@ const RecipeCostPage: React.FC = () => {
                       disabled={isEditMode}
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        !selectedDate && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -561,18 +533,11 @@ const RecipeCostPage: React.FC = () => {
                   disabled={isLoadingRecipeTypes || isEditMode}
                 >
                   <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        isLoadingRecipeTypes ? "Loading..." : "Select recipe type"
-                      }
-                    />
+                    <SelectValue placeholder={isLoadingRecipeTypes ? "Loading..." : "Select recipe type"} />
                   </SelectTrigger>
                   <SelectContent className="bg-background">
                     {recipeTypes.map((rt) => (
-                      <SelectItem
-                        key={rt.recipe_code}
-                        value={String(rt.recipe_code)}
-                      >
+                      <SelectItem key={rt.recipe_code} value={String(rt.recipe_code)}>
                         {rt.recipe_type}
                       </SelectItem>
                     ))}
@@ -588,9 +553,7 @@ const RecipeCostPage: React.FC = () => {
               </div>
             ) : ingredients.length > 0 ? (
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Ingredients ({ingredients.length})
-                </h3>
+                <h3 className="text-sm font-semibold text-foreground">Ingredients ({ingredients.length})</h3>
                 <div className="overflow-x-auto border rounded-lg">
                   <Table>
                     <TableHeader>
@@ -652,9 +615,7 @@ const RecipeCostPage: React.FC = () => {
                               <Input
                                 type="number"
                                 value={item.req_qty || ""}
-                                onChange={(e) =>
-                                  updateIngredient(index, "req_qty", e.target.value)
-                                }
+                                onChange={(e) => updateIngredient(index, "req_qty", e.target.value)}
                                 onKeyDown={numericOnly}
                                 className="w-20 text-right ml-auto"
                                 min="0"
@@ -664,18 +625,14 @@ const RecipeCostPage: React.FC = () => {
                               <Input
                                 type="number"
                                 value={item.item_rate || ""}
-                                onChange={(e) =>
-                                  updateIngredient(index, "item_rate", e.target.value)
-                                }
+                                onChange={(e) => updateIngredient(index, "item_rate", e.target.value)}
                                 onKeyDown={numericOnly}
                                 className="w-24 text-right ml-auto"
                                 min="0"
                                 step="0.01"
                               />
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              ₹{totalRate.toFixed(2)}
-                            </TableCell>
+                            <TableCell className="text-right font-medium">₹{totalRate.toFixed(2)}</TableCell>
                             <TableCell>
                               {isManual && (
                                 <Button
@@ -696,29 +653,20 @@ const RecipeCostPage: React.FC = () => {
                         <TableCell colSpan={7} className="text-right">
                           Grand Total
                         </TableCell>
-                        <TableCell className="text-right">
-                          ₹{grandTotal.toFixed(2)}
-                        </TableCell>
+                        <TableCell className="text-right">₹{grandTotal.toFixed(2)}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
                 </div>
                 {!isEditMode && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 mt-2"
-                    onClick={addManualIngredient}
-                  >
+                  <Button variant="outline" size="sm" className="gap-2 mt-2" onClick={addManualIngredient}>
                     <Plus className="w-4 h-4" />
-                    Add Manual Ingredient
+                    Add Others
                   </Button>
                 )}
               </div>
             ) : selectedRecipeCode ? (
-              <p className="text-center py-6 text-muted-foreground">
-                No ingredients found for this recipe type
-              </p>
+              <p className="text-center py-6 text-muted-foreground">No ingredients found for this recipe type</p>
             ) : null}
 
             {/* Action Buttons */}
@@ -735,19 +683,10 @@ const RecipeCostPage: React.FC = () => {
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  !selectedDate ||
-                  !selectedRecipeCode ||
-                  ingredients.length === 0
-                }
+                disabled={isSubmitting || !selectedDate || !selectedRecipeCode || ingredients.length === 0}
                 className="gap-2"
               >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {isEditMode ? "Update Recipe Cost" : "Save Recipe Cost"}
               </Button>
             </div>
@@ -763,8 +702,8 @@ const RecipeCostPage: React.FC = () => {
             <AlertDialogDescription>
               Are you sure you want to delete the recipe cost for{" "}
               <span className="font-semibold">{deleteRecord?.recipe_type}</span> on{" "}
-              <span className="font-semibold">{deleteRecord ? formatDateForTable(deleteRecord.day_rcp_date) : ""}</span>?
-              This action cannot be undone.
+              <span className="font-semibold">{deleteRecord ? formatDateForTable(deleteRecord.day_rcp_date) : ""}</span>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
