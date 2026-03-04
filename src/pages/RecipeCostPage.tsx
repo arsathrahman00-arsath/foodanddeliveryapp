@@ -53,6 +53,7 @@ interface IngredientRow {
   unit_short: string;
   req_qty: number;
   item_rate: number;
+  _isManual?: boolean;
 }
 
 const RecipeCostPage: React.FC = () => {
@@ -210,6 +211,39 @@ const RecipeCostPage: React.FC = () => {
         i === index ? { ...item, [field]: Number(value) || 0 } : item
       )
     );
+  };
+
+  // Update manual ingredient text field
+  const updateIngredientText = (index: number, field: "cat_name" | "item_name" | "unit_short", value: string) => {
+    setIngredients((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  // Add manual ingredient row
+  const addManualIngredient = () => {
+    const selectedType = recipeTypes.find((rt) => String(rt.recipe_code) === selectedRecipeCode);
+    setIngredients((prev) => [
+      ...prev,
+      {
+        recipe_type: selectedType?.recipe_type || "",
+        item_name: "",
+        item_code: "",
+        cat_name: "",
+        cat_code: "",
+        unit_short: "",
+        req_qty: 0,
+        item_rate: 0,
+        _isManual: true,
+      } as IngredientRow & { _isManual?: boolean },
+    ]);
+  };
+
+  // Remove manual ingredient row
+  const removeManualIngredient = (index: number) => {
+    setIngredients((prev) => prev.filter((_, i) => i !== index));
   };
 
   const grandTotal = ingredients.reduce(
@@ -568,17 +602,52 @@ const RecipeCostPage: React.FC = () => {
                         <TableHead className="text-right">Req Qty</TableHead>
                         <TableHead className="text-right">Unit Rate (₹)</TableHead>
                         <TableHead className="text-right">Total (₹)</TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {ingredients.map((item, index) => {
                         const totalRate = item.req_qty * item.item_rate;
+                        const isManual = !!(item as any)._isManual;
                         return (
                           <TableRow key={index}>
                             <TableCell>{index + 1}</TableCell>
-                            <TableCell>{item.cat_name}</TableCell>
-                            <TableCell>{item.item_name}</TableCell>
-                            <TableCell>{item.unit_short}</TableCell>
+                            <TableCell>
+                              {isManual ? (
+                                <Input
+                                  value={item.cat_name}
+                                  onChange={(e) => updateIngredientText(index, "cat_name", e.target.value)}
+                                  placeholder="Category"
+                                  className="w-28"
+                                />
+                              ) : (
+                                item.cat_name
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isManual ? (
+                                <Input
+                                  value={item.item_name}
+                                  onChange={(e) => updateIngredientText(index, "item_name", e.target.value)}
+                                  placeholder="Item name"
+                                  className="w-32"
+                                />
+                              ) : (
+                                item.item_name
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isManual ? (
+                                <Input
+                                  value={item.unit_short}
+                                  onChange={(e) => updateIngredientText(index, "unit_short", e.target.value)}
+                                  placeholder="Unit"
+                                  className="w-16"
+                                />
+                              ) : (
+                                item.unit_short
+                              )}
+                            </TableCell>
                             <TableCell className="text-right">
                               <Input
                                 type="number"
@@ -607,12 +676,24 @@ const RecipeCostPage: React.FC = () => {
                             <TableCell className="text-right font-medium">
                               ₹{totalRate.toFixed(2)}
                             </TableCell>
+                            <TableCell>
+                              {isManual && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => removeManualIngredient(index)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
                       {/* Grand Total Row */}
                       <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={6} className="text-right">
+                        <TableCell colSpan={7} className="text-right">
                           Grand Total
                         </TableCell>
                         <TableCell className="text-right">
@@ -622,6 +703,17 @@ const RecipeCostPage: React.FC = () => {
                     </TableBody>
                   </Table>
                 </div>
+                {!isEditMode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 mt-2"
+                    onClick={addManualIngredient}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Manual Ingredient
+                  </Button>
+                )}
               </div>
             ) : selectedRecipeCode ? (
               <p className="text-center py-6 text-muted-foreground">
