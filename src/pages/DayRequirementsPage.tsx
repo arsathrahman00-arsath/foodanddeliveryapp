@@ -217,7 +217,7 @@ const DayRequirementsPage: React.FC = () => {
       formData.append("day_req_date", req.day_req_date?.split("T")[0] || req.day_req_date);
       formData.append("purc_id", req.purc_id || "");
       formData.append("purc_type", req.purc_type || "Retail");
-      const response = await fetch("https://ngrchatbot.whindia.in/fpda/pdf_down/", {
+      const response = await fetch("https://ngrchatbot.whindia.in/fpda/pdf_down_retail/", {
         method: "POST",
         body: formData,
       });
@@ -287,13 +287,12 @@ const DayRequirementsPage: React.FC = () => {
         item.item_name || "",
         item.unit_short || "",
         String(item.day_req_qty || item.total_qty || item.purchase_qty || ""),
-        item.created_by || "",
       ];
     });
 
     autoTable(doc, {
       startY: 36,
-      head: [["Date", "Item Name", "Unit", "Total Quantity", "Created By"]],
+      head: [["Date", "Item Name", "Unit", "Total Quantity"]],
       body: rows,
       theme: "grid",
       headStyles: { fillColor: [59, 130, 246], fontSize: 9 },
