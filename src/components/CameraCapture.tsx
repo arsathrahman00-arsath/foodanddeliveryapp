@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import { Camera, Video, Square, RotateCcw, Check, X, Loader2 } from "lucide-react";
+import { Camera, Video, Square, RotateCcw, Check, X, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -113,6 +114,14 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     mediaRecorderRef.current?.stop();
     setIsRecording(false);
   }, []);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreviewUrl(URL.createObjectURL(file));
+    onCapture(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [onCapture]);
 
   const handleClear = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -222,25 +231,45 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     );
   }
 
-  // Default: open camera button
+  // Default: capture or upload options
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">{label}</label>
-      <div
-        onClick={() => startCamera()}
-        className={cn(
-          "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-          "border-border hover:border-primary/30 active:bg-primary/5"
-        )}
-      >
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          {mode === "photo" ? <Camera className="w-8 h-8" /> : <Video className="w-8 h-8" />}
-          <span className="text-sm font-medium">
-            Tap to open camera
-          </span>
-          <span className="text-xs">
-            {mode === "photo" ? "Capture a photo directly" : "Record a video directly"}
-          </span>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={mode === "photo" ? "image/*" : "video/*"}
+        className="hidden"
+        onChange={handleFileUpload}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <div
+          onClick={() => startCamera()}
+          className={cn(
+            "border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors",
+            "border-border hover:border-primary/30 active:bg-primary/5"
+          )}
+        >
+          <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+            {mode === "photo" ? <Camera className="w-7 h-7" /> : <Video className="w-7 h-7" />}
+            <span className="text-xs font-medium">
+              {mode === "photo" ? "Capture Photo" : "Record Video"}
+            </span>
+          </div>
+        </div>
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors",
+            "border-border hover:border-primary/30 active:bg-primary/5"
+          )}
+        >
+          <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+            <Upload className="w-7 h-7" />
+            <span className="text-xs font-medium">
+              {mode === "photo" ? "Upload Photo" : "Upload Video"}
+            </span>
+          </div>
         </div>
       </div>
     </div>
