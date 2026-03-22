@@ -33,6 +33,8 @@ import ViewMediaPage from "@/pages/ViewMediaPage";
 import ModuleMasterPage from "@/pages/ModuleMasterPage";
 import UserRightsPage from "@/pages/UserRightsPage";
 import RecipeCostPage from "@/pages/RecipeCostPage";
+import StoreRoomPage from "@/pages/StoreRoomPage";
+import SopDetailsPage from "@/pages/SopDetailsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
