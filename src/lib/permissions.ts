@@ -18,6 +18,8 @@ const permissionRouteMap: Record<string, string> = {
   "master:supplier": "/dashboard/supplier",
   "master:recipe_type": "/dashboard/recipe-type",
   "master:recipe_for_a_kg": "/dashboard/recipe",
+  "master:store_room": "/dashboard/store-room",
+  "master:sop_details": "/dashboard/sop-details",
   // Delivery Plan
   "delivery_plan:schedule": "/dashboard/schedule",
   "delivery_plan:requirement": "/dashboard/requirement",

@@ -40,6 +40,8 @@ const masterMenuItems = [
   { to: "/dashboard/supplier", icon: <Truck className="w-4 h-4" />, label: "Supplier" },
   { to: "/dashboard/recipe-type", icon: <BookOpen className="w-4 h-4" />, label: "Recipe Type" },
   { to: "/dashboard/recipe", icon: <UtensilsCrossed className="w-4 h-4" />, label: "Recipe for a Kg" },
+  { to: "/dashboard/store-room", icon: <Archive className="w-4 h-4" />, label: "Store Room" },
+  { to: "/dashboard/sop-details", icon: <ClipboardList className="w-4 h-4" />, label: "SOP Details" },
 ];
 
 const deliveryPlanMenuItems = [
